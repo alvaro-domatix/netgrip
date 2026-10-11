@@ -849,6 +849,28 @@ const realApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ all: true, percent }),
     }),
+  mirror: () =>
+    request<import("./types").MirrorProbe>("/api/mirror"),
+  setMirror: (monitor: string, sources: string[]) =>
+    request<{ status: string }>("/api/mirror", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ monitor, sources }),
+    }),
+  rateLimit: () =>
+    request<import("./types").RateProbe>("/api/ratelimit"),
+  setRateLimit: (port: string, ingress: number, egress: number) =>
+    request<{ status: string }>("/api/ratelimit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ port, ingress_percent: ingress, egress_percent: egress }),
+    }),
+  setRateLimitAll: (ingress: number, egress: number) =>
+    request<{ status: string }>("/api/ratelimit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ all: true, ingress_percent: ingress, egress_percent: egress }),
+    }),
   storage: () =>
     request<import("./types").StorageProbe>("/api/storage"),
   setStorageService: (name: string, action: "enable" | "disable") =>
