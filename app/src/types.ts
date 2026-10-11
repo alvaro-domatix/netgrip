@@ -1401,6 +1401,48 @@ export interface StormProbe {
   tc_installed?: boolean;
 }
 
+/** Espejo de puertos (#443): una boca monitor recibe copia del trafico de las bocas origen. */
+export interface MirrorPort {
+  port: string;
+  link_speed_mbps: number;
+  /** La boca esta configurada como origen (mirror.conf). */
+  mirrored: boolean;
+  /** Los filtros tc del espejo estan presentes. */
+  active: boolean;
+}
+
+export interface MirrorProbe {
+  applicable: boolean;
+  ports: MirrorPort[];
+  tc_installed?: boolean;
+  /** La accion mirred funciona en este kernel (probe real). */
+  mirror_supported?: boolean;
+  /** Heuristica: boca hacia el gateway por defecto (la de gestion). */
+  management_port?: string;
+  /** Config actual: monitor "" = desactivado. */
+  monitor: string;
+  sources: string[];
+}
+
+/** Banda ancha por boca (#443): limites in/out en % del ancho de enlace. */
+export interface RatePort {
+  port: string;
+  link_speed_mbps: number;
+  ingress_percent: number;
+  egress_percent: number;
+  active: boolean;
+}
+
+export interface RateProbe {
+  applicable: boolean;
+  ports: RatePort[];
+  tc_installed?: boolean;
+  /** El police de entrada funciona en este kernel (probe real). */
+  ingress_supported?: boolean;
+  /** El tbf de salida funciona en este kernel (probe real). */
+  egress_supported?: boolean;
+}
+
 export interface StorageDevice {
   name: string;
   path: string;

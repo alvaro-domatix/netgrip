@@ -1,10 +1,13 @@
 #!/bin/sh
 # /usr/libexec/netgrip-restore-rules
-# Reapplies MAC ACL (nftables) and storm control (tc) rules after boot.
+# Reapplies MAC ACL (nftables), storm control, port mirroring and per-port
+# rate limits (the tc parts) after boot.
 # Called from /etc/init.d/netgrip start_service via a post-start hook.
 
 MAC_ACL_JSON="/etc/netgrip/mac-acl.json"
 STORM_CONF="/etc/netgrip/storm.conf"
+MIRROR_CONF="/etc/netgrip/mirror.conf"
+RATE_CONF="/etc/netgrip/rate.conf"
 
 # --- MAC ACL (nftables bridge) ---
 if [ -f "$MAC_ACL_JSON" ]; then
@@ -19,7 +22,7 @@ if [ -f "$MAC_ACL_JSON" ]; then
   while IFS= read -r obj; do
     port=$(echo "$obj" | sed -n 's/.*"port":"\([^"]*\)".*/\1/p')
     mode=$(echo "$obj" | sed -n 's/.*"mode":"\([^"]*\)".*/\1/p')
-    macs=$(echo "$obj" | sed -n 's/.*"macs":\[\(.*\)\].*/\1/p' | tr -d '"')
+    macs=$(echo "$obj" | sed -n 's/.*"macs":\[\([^]]*\)\].*/\1/p' | tr -d '"')
 
     [ -z "$port" ] || [ -z "$mode" ] || [ "$mode" = "off" ] || [ -z "$macs" ] && continue
 
@@ -27,8 +30,10 @@ if [ -f "$MAC_ACL_JSON" ]; then
     rules="$rules
   chain $chain {"
 
-    IFS=',' read -ra mac_arr <<< "$macs"
-    for mac in "${mac_arr[@]}"; do
+    # POSIX: busybox ash no soporta herestrings (<<< rompia el parseo de
+    # TODO el script, tambien en la seccion storm).
+    mac_list=$(echo "$macs" | tr ',' ' ')
+    for mac in $mac_list; do
       mac=$(echo "$mac" | tr -d ' ' | tr '[:upper:]' '[:lower:]')
       [ -z "$mac" ] && continue
       if [ "$mode" = "allow" ]; then
@@ -58,7 +63,14 @@ EOF
   echo "[netgrip-restore] MAC ACL rules applied"
 fi
 
+# Everything below needs tc; skip the tc parts when it is missing (the
+# panel reinstalls it on the next apply, #489).
+command -v tc >/dev/null 2>&1 || exit 0
+
 # --- Storm control (tc) ---
+# clsact is the shared ingress/egress hook for storm, mirroring and rate
+# limits; storm owns priorities 1 and 2. Verified syntax on rtl931x (#489):
+# ematch cmp on "layer link".
 if [ -f "$STORM_CONF" ]; then
   while IFS='=' read -r key val; do
     [ -z "$key" ] || [ -z "$val" ] && continue
@@ -75,19 +87,76 @@ if [ -f "$STORM_CONF" ]; then
 
     rate_kbps=$((speed_mbps * 1000 * percent / 100))
 
-    tc qdisc del dev "$port" ingress 2>/dev/null
-    tc qdisc add dev "$port" ingress 2>/dev/null || continue
+    tc qdisc add dev "$port" clsact 2>/dev/null
+    tc filter del dev "$port" ingress prio 1 2>/dev/null
+    tc filter del dev "$port" ingress prio 2 2>/dev/null
 
-    tc filter add dev "$port" parent ffff: protocol all prio 1 \
-      basic match "meta(dst eq ff:ff:ff:ff:ff:ff)" \
-      police rate "${rate_kbps}kbit" burst 32k exceed drop 2>/dev/null
+    tc filter add dev "$port" ingress protocol all prio 1 \
+      basic match "cmp(u16 at 0 layer link mask 0xffff eq 0xffff) and cmp(u16 at 2 layer link mask 0xffff eq 0xffff) and cmp(u16 at 4 layer link mask 0xffff eq 0xffff)" \
+      police rate "${rate_kbps}kbit" burst 32k drop 2>/dev/null
 
-    tc filter add dev "$port" parent ffff: protocol all prio 2 \
-      basic match "meta(dst eq 01:00:5e:00:00:00/01:00:00:00:00:00)" \
-      police rate "${rate_kbps}kbit" burst 32k exceed drop 2>/dev/null
+    tc filter add dev "$port" ingress protocol all prio 2 \
+      basic match "cmp(u32 at 0 layer link mask 0x01000000 eq 0x01000000)" \
+      police rate "${rate_kbps}kbit" burst 32k drop 2>/dev/null
 
     echo "[netgrip-restore] Storm control applied on $port (${percent}%)"
   done < "$STORM_CONF"
+fi
+
+# --- Port mirroring (tc mirred) ---
+# Format:
+#   monitor=lan21
+#   sources=lan20 lan22
+if [ -f "$MIRROR_CONF" ]; then
+  monitor=$(sed -n 's/^monitor=//p' "$MIRROR_CONF" | head -n1)
+  sources=$(sed -n 's/^sources=//p' "$MIRROR_CONF" | head -n1)
+  if [ -n "$monitor" ]; then
+    for port in $sources; do
+      tc qdisc add dev "$port" clsact 2>/dev/null
+      tc filter del dev "$port" ingress prio 10 2>/dev/null
+      tc filter del dev "$port" egress prio 11 2>/dev/null
+      tc filter add dev "$port" ingress protocol all prio 10 \
+        matchall action mirred egress mirror dev "$monitor" 2>/dev/null
+      tc filter add dev "$port" egress protocol all prio 11 \
+        matchall action mirred egress mirror dev "$monitor" 2>/dev/null
+      echo "[netgrip-restore] Mirror $port -> $monitor applied"
+    done
+  fi
+fi
+
+# --- Per-port rate limit (tc) ---
+# Format: one port per line, ingress,egress percent of link speed:
+#   lan20=10,25
+if [ -f "$RATE_CONF" ]; then
+  while IFS='=' read -r port vals; do
+    [ -z "$port" ] && continue
+    ing=${vals%,*}
+    eg=${vals#*,}
+
+    speed_mbps=1000
+    if [ -f "/sys/class/net/$port/speed" ]; then
+      s=$(cat "/sys/class/net/$port/speed" 2>/dev/null)
+      [ "$s" -gt 0 ] 2>/dev/null && speed_mbps="$s"
+    fi
+    kbps=$((speed_mbps * 1000))
+
+    if [ "$ing" -gt 0 ] 2>/dev/null; then
+      rate_kbps=$((kbps * ing / 100))
+      tc qdisc add dev "$port" clsact 2>/dev/null
+      tc filter del dev "$port" ingress prio 20 2>/dev/null
+      tc filter add dev "$port" ingress protocol all prio 20 \
+        matchall action police rate "${rate_kbps}kbit" burst 32k drop 2>/dev/null
+    fi
+
+    if [ "$eg" -gt 0 ] 2>/dev/null; then
+      rate_kbps=$((kbps * eg / 100))
+      tc qdisc del dev "$port" root 2>/dev/null
+      tc qdisc add dev "$port" root handle 1: \
+        tbf rate "${rate_kbps}kbit" burst 32k latency 100ms 2>/dev/null
+    fi
+
+    echo "[netgrip-restore] Rate limit applied on $port (in ${ing}%, out ${eg}%)"
+  done < "$RATE_CONF"
 fi
 
 exit 0

@@ -251,26 +251,38 @@ func stormTargets(req StormSetRequest) ([]string, error) {
 }
 
 func setStormPort(port string, percent int) error {
-	speedPath := fmt.Sprintf("/sys/class/net/%s/speed", port)
-	speedMbps := 1000
-	if data, err := os.ReadFile(speedPath); err == nil {
-		if v, err := strconv.Atoi(strings.TrimSpace(string(data))); err == nil && v > 0 {
-			speedMbps = v
-		}
-	}
-
-	rateKbps := speedMbps * 1000 * percent / 100
-
-	exec.Command("tc", "qdisc", "del", "dev", port, "ingress").Run()
-
+	// Revertir (0) solo quita los filtros storm de la boca: el qdisc
+	// clsact lo puede estar usando el espejo o la banda ancha (#443), asi
+	// que se borra por prioridad y solo si la boca queda vacia.
 	if percent == 0 {
+		tcDelPrio(port, "ingress", prioStormBroadcast)
+		tcDelPrio(port, "ingress", prioStormMulticast)
 		removeStormConfig(port)
+		maybeDropClsact(port)
 		return nil
 	}
 
-	if err := exec.Command("tc", "qdisc", "add", "dev", port, "ingress").Run(); err != nil {
-		return fmt.Errorf("add ingress qdisc on %s: %v", port, err)
+	if err := ensureClsact(port); err != nil {
+		return err
 	}
+	if err := applyStormFilters(port, percent); err != nil {
+		return err
+	}
+
+	saveStormConfig(port, percent)
+
+	return nil
+}
+
+// applyStormFilters re-escribe los dos filtros storm de una boca (difusion
+// y multidifusion) sobre el gancho ingress que aporte el qdisc de turno
+// (clsact o ingress plano; la palabra clave "ingress" vale para ambos,
+// verificado en el LGS352C). Asume que el qdisc ya existe.
+func applyStormFilters(port string, percent int) error {
+	rateKbps := linkSpeedMbps(port) * 1000 * percent / 100
+
+	tcDelPrio(port, "ingress", prioStormBroadcast)
+	tcDelPrio(port, "ingress", prioStormMulticast)
 
 	bcRate := fmt.Sprintf("%dkbit", rateKbps)
 
@@ -279,21 +291,19 @@ func setStormPort(port string, percent int) error {
 	// negativos en este kernel (verificado en el LGS352C, rtl931x, #489).
 	// Difusion: 6 primeros bytes del dst = ff. Multidifusion: bit de grupo
 	// (LSB del primer byte) activado (cubre 01:00:5e IPv4 y 33:33 IPv6).
-	if out, err := exec.Command("tc", "filter", "add", "dev", port, "parent", "ffff:",
-		"protocol", "all", "prio", "1",
+	if out, err := exec.Command("tc", "filter", "add", "dev", port, "ingress",
+		"protocol", "all", "prio", strconv.Itoa(prioStormBroadcast),
 		"basic", "match", stormMatchBroadcast,
 		"police", "rate", bcRate, "burst", "32k", "drop").CombinedOutput(); err != nil {
 		return fmt.Errorf("add broadcast filter on %s: %v (%s)", port, err, strings.TrimSpace(string(out)))
 	}
 
-	if out, err := exec.Command("tc", "filter", "add", "dev", port, "parent", "ffff:",
-		"protocol", "all", "prio", "2",
+	if out, err := exec.Command("tc", "filter", "add", "dev", port, "ingress",
+		"protocol", "all", "prio", strconv.Itoa(prioStormMulticast),
 		"basic", "match", stormMatchMulticast,
 		"police", "rate", bcRate, "burst", "32k", "drop").CombinedOutput(); err != nil {
 		return fmt.Errorf("add multicast filter on %s: %v (%s)", port, err, strings.TrimSpace(string(out)))
 	}
-
-	saveStormConfig(port, percent)
 
 	return nil
 }
@@ -344,5 +354,9 @@ func writeStormConfigs(configs map[string]int) {
 	for port, pct := range configs {
 		lines = append(lines, fmt.Sprintf("%s=%d", port, pct))
 	}
-	os.WriteFile(stormConfPath, []byte(strings.Join(lines, "\n")+"\n"), 0600)
+	content := strings.Join(lines, "\n")
+	if len(lines) > 0 {
+		content += "\n"
+	}
+	os.WriteFile(stormConfPath, []byte(content), 0600)
 }

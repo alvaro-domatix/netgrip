@@ -307,6 +307,10 @@ func New(rpcdURL, version string, secure bool, servingCert string) *Server {
 	s.mux.HandleFunc("POST /api/diagnostics", s.requireAuth(s.handleDiagnosticsRun))
 	s.mux.HandleFunc("GET /api/storm", s.requireAdvanced(s.handleStormGet))
 	s.mux.HandleFunc("POST /api/storm", s.requireAdvanced(s.handleStormSet))
+	s.mux.HandleFunc("GET /api/mirror", s.requireAdvanced(s.handleMirrorGet))
+	s.mux.HandleFunc("POST /api/mirror", s.requireAdvanced(s.handleMirrorSet))
+	s.mux.HandleFunc("GET /api/ratelimit", s.requireAdvanced(s.handleRateGet))
+	s.mux.HandleFunc("POST /api/ratelimit", s.requireAdvanced(s.handleRateSet))
 	s.mux.HandleFunc("GET /api/storage", s.requireAuth(s.handleStorageGet))
 	s.mux.HandleFunc("POST /api/storage", s.requireAuth(s.handleStorageSet))
 	s.mux.HandleFunc("GET /api/mac-acl", s.requireAdvanced(s.handleMACACLGet))
@@ -2948,6 +2952,40 @@ func (s *Server) handleStormSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := modules.SetStormControl(req); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, map[string]string{"status": "applied"})
+}
+
+func (s *Server) handleMirrorGet(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, modules.ProbeMirror())
+}
+
+func (s *Server) handleMirrorSet(w http.ResponseWriter, r *http.Request) {
+	var req modules.MirrorSetRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	if err := modules.SetMirror(req); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, map[string]string{"status": "applied"})
+}
+
+func (s *Server) handleRateGet(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, modules.ProbeRateLimit())
+}
+
+func (s *Server) handleRateSet(w http.ResponseWriter, r *http.Request) {
+	var req modules.RateSetRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	if err := modules.SetRateLimit(req); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

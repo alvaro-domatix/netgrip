@@ -671,6 +671,10 @@ export const demoCableTest: T.CableTestProbe = {
 
 export const demoStorm: T.StormProbe = { applicable: false, ports: [] };
 
+export const demoMirror: T.MirrorProbe = { applicable: false, ports: [], monitor: "", sources: [] };
+
+export const demoRate: T.RateProbe = { applicable: false, ports: [] };
+
 export const demoStp: T.STPProbe = {
   applicable: false,
   bridge: "br-lan",
