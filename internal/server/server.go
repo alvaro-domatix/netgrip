@@ -311,6 +311,11 @@ func New(rpcdURL, version string, secure bool, servingCert string) *Server {
 	s.mux.HandleFunc("POST /api/mirror", s.requireAdvanced(s.handleMirrorSet))
 	s.mux.HandleFunc("GET /api/ratelimit", s.requireAdvanced(s.handleRateGet))
 	s.mux.HandleFunc("POST /api/ratelimit", s.requireAdvanced(s.handleRateSet))
+	s.mux.HandleFunc("GET /api/port-isolation", s.requireAdvanced(s.handlePortIsolationGet))
+	s.mux.HandleFunc("POST /api/port-isolation", s.requireAdvanced(s.handlePortIsolationSet))
+	s.mux.HandleFunc("GET /api/port-security", s.requireAdvanced(s.handlePortSecurityGet))
+	s.mux.HandleFunc("POST /api/port-security/learning", s.requireAdvanced(s.handlePortSecurityLearningSet))
+	s.mux.HandleFunc("POST /api/port-security/fdb", s.requireAdvanced(s.handlePortSecurityFdbSet))
 	s.mux.HandleFunc("GET /api/storage", s.requireAuth(s.handleStorageGet))
 	s.mux.HandleFunc("POST /api/storage", s.requireAuth(s.handleStorageSet))
 	s.mux.HandleFunc("GET /api/mac-acl", s.requireAdvanced(s.handleMACACLGet))
@@ -3017,6 +3022,53 @@ func (s *Server) handleStorageSet(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleMACACLGet(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, modules.ProbeMACACL())
+}
+
+func (s *Server) handlePortIsolationGet(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, modules.ProbePortIsolation())
+}
+
+func (s *Server) handlePortIsolationSet(w http.ResponseWriter, r *http.Request) {
+	var req modules.PortIsolationSetRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	if err := modules.SetPortIsolation(req); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, map[string]string{"status": "applied"})
+}
+
+func (s *Server) handlePortSecurityGet(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, modules.ProbePortSecurity())
+}
+
+func (s *Server) handlePortSecurityLearningSet(w http.ResponseWriter, r *http.Request) {
+	var req modules.PortSecurityLearningRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	if err := modules.SetPortLearning(req); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, map[string]string{"status": "applied"})
+}
+
+func (s *Server) handlePortSecurityFdbSet(w http.ResponseWriter, r *http.Request) {
+	var req modules.PortSecurityFdbRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	if err := modules.SetPortStaticMAC(req); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, map[string]string{"status": "applied"})
 }
 
 func (s *Server) handleMACACLSet(w http.ResponseWriter, r *http.Request) {

@@ -13,6 +13,7 @@ import { PortTemplatesCard } from "../components/ports/PortTemplatesCard";
 import { SwitchModesCard } from "../components/ports/SwitchModesCard";
 import { IgmpCard, MacAclCard, StormControlCard } from "../components/tools/advanced";
 import { MirrorCard, RateLimitCard } from "../components/ports/TrafficCards";
+import { PortIsolationCard, PortSecurityCard } from "../components/ports/SecurityCards";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 
 /**
@@ -140,6 +141,8 @@ export function Ports({ ethports }: { ethports?: EthPort[] }) {
           <RoleProfilesCard />
           <PortTemplatesCard />
           <SwitchModesCard />
+          <PortIsolationCard />
+          <PortSecurityCard />
           <MacAclCard />
         </div>
       )}

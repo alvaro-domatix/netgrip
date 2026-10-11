@@ -1,10 +1,14 @@
 #!/bin/sh
 # /usr/libexec/netgrip-restore-rules
-# Reapplies MAC ACL (nftables), storm control, port mirroring and per-port
-# rate limits (the tc parts) after boot.
+# Reapplies MAC ACL (nftables), port isolation and learning (bridge port
+# sysfs), static FDB entries (via `netgrip -restore-fdb`), storm control,
+# port mirroring and per-port rate limits (the tc parts) after boot.
 # Called from /etc/init.d/netgrip start_service via a post-start hook.
 
 MAC_ACL_JSON="/etc/netgrip/mac-acl.json"
+ISOLATION_CONF="/etc/netgrip/isolation.conf"
+LEARNING_CONF="/etc/netgrip/learning.conf"
+FDB_CONF="/etc/netgrip/fdb.conf"
 STORM_CONF="/etc/netgrip/storm.conf"
 MIRROR_CONF="/etc/netgrip/mirror.conf"
 RATE_CONF="/etc/netgrip/rate.conf"
@@ -61,6 +65,47 @@ EOF
 
   echo "$rules" | nft -f - 2>/dev/null
   echo "[netgrip-restore] MAC ACL rules applied"
+fi
+
+# --- Port isolation (bridge port sysfs, #449) ---
+# Format: one isolated port per line:
+#   lan20
+if [ -f "$ISOLATION_CONF" ]; then
+  while IFS= read -r line; do
+    port=${line%%=*}
+    val=${line#*=}
+    # Sin "=" val es la propia linea: nombre a pelo = aislado.
+    [ "$val" = "$line" ] && val=1
+    [ -z "$port" ] && [ -z "$val" ] && continue
+    [ "$val" = "0" ] && continue
+    if [ -f "/sys/class/net/$port/brport/isolated" ]; then
+      echo 1 > "/sys/class/net/$port/brport/isolated" 2>/dev/null
+      echo "[netgrip-restore] Port isolation applied on $port"
+    fi
+  done < "$ISOLATION_CONF"
+fi
+
+# --- Port learning off (bridge port sysfs, #449) ---
+# Format: one port with learning disabled per line:
+#   lan20=0
+if [ -f "$LEARNING_CONF" ]; then
+  while IFS='=' read -r port val; do
+    [ -z "$port" ] && continue
+    [ -z "$val" ] && val=0
+    [ "$val" != "0" ] && continue
+    if [ -f "/sys/class/net/$port/brport/learning" ]; then
+      echo 0 > "/sys/class/net/$port/brport/learning" 2>/dev/null
+      echo "[netgrip-restore] Port learning disabled on $port"
+    fi
+  done < "$LEARNING_CONF"
+fi
+
+# --- Static FDB entries (#449) ---
+# Format: "<port>=<mac> <mac>..." per line. No `bridge` tool exists on the
+# targets (busybox does not ship it), so the re-apply is netlink from the
+# netgrip binary itself.
+if [ -f "$FDB_CONF" ] && [ -x /usr/sbin/netgrip ]; then
+  /usr/sbin/netgrip -restore-fdb && echo "[netgrip-restore] Static FDB entries applied"
 fi
 
 # Everything below needs tc; skip the tc parts when it is missing (the

@@ -667,6 +667,11 @@ export const demoApi: typeof api = {
   rateLimit: () => get(D.demoRate),
   setRateLimit: async () => { await wait(800, 1500); return { status: "ok" }; },
   setRateLimitAll: async () => { await wait(800, 1500); return { status: "ok" }; },
+  portIsolation: () => get(D.demoPortIsolation),
+  setPortIsolation: async () => { await wait(800, 1500); return { status: "ok" }; },
+  portSecurity: () => get(D.demoPortSecurity),
+  setPortLearning: async () => { await wait(800, 1500); return { status: "ok" }; },
+  setPortStaticMac: async () => { await wait(800, 1500); return { status: "ok" }; },
   macAcl: () => get(D.demoMacAcl),
   runBufferbloatTest: async () => {
     await wait(2500, 4000);

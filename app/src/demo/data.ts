@@ -675,6 +675,16 @@ export const demoMirror: T.MirrorProbe = { applicable: false, ports: [], monitor
 
 export const demoRate: T.RateProbe = { applicable: false, ports: [] };
 
+// #449: el escenario García es un router sin puente gestionable de switch,
+// así que las capacidades de boca aparecen como no aplicables.
+export const demoPortIsolation: T.PortIsolationProbe = { applicable: false, ports: [] };
+
+export const demoPortSecurity: T.PortSecurityProbe = {
+  applicable: false,
+  ports: [],
+  mac_limit_supported: false,
+};
+
 export const demoStp: T.STPProbe = {
   applicable: false,
   bridge: "br-lan",
