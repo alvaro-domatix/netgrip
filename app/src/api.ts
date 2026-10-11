@@ -871,6 +871,28 @@ const realApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ all: true, ingress_percent: ingress, egress_percent: egress }),
     }),
+  portIsolation: () =>
+    request<import("./types").PortIsolationProbe>("/api/port-isolation"),
+  setPortIsolation: (port: string, isolated: boolean) =>
+    request<{ status: string }>("/api/port-isolation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ port, isolated }),
+    }),
+  portSecurity: () =>
+    request<import("./types").PortSecurityProbe>("/api/port-security"),
+  setPortLearning: (port: string, learning: boolean) =>
+    request<{ status: string }>("/api/port-security/learning", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ port, learning }),
+    }),
+  setPortStaticMac: (port: string, mac: string, add: boolean) =>
+    request<{ status: string }>("/api/port-security/fdb", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ port, mac, add }),
+    }),
   storage: () =>
     request<import("./types").StorageProbe>("/api/storage"),
   setStorageService: (name: string, action: "enable" | "disable") =>

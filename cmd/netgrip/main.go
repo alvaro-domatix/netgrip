@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gnacho/netgrip/internal/auth"
@@ -17,6 +18,7 @@ var version = "dev"
 func main() {
 	listen := flag.String("listen", "0.0.0.0", "listen address")
 	showVersion := flag.Bool("version", false, "print version and exit")
+	restoreFdb := flag.Bool("restore-fdb", false, "re-apply the static FDB entries from fdb.conf and exit (called by netgrip-restore-rules at boot)")
 	port := flag.Int("port", 8090, "listen port")
 	rpcdURL := flag.String("rpcd-url", auth.DefaultRPCdURL, "rpcd JSON-RPC endpoint used for login validation")
 	useTLS := flag.Bool("https", false, "serve the panel over HTTPS on the listen port")
@@ -25,6 +27,17 @@ func main() {
 	flag.Parse()
 	if *showVersion {
 		fmt.Println(version)
+		return
+	}
+	// Modo restore (arranque): re-aplica la FDB estatica y sale. Vive aqui
+	// y no en el script netgrip-restore-rules porque los targets no traen
+	// la herramienta `bridge` y el re-aplicado es netlink puro (#449).
+	if *restoreFdb {
+		if err := modules.RestoreStaticFdb(); err != nil {
+			log.Printf("netgrip: restore-fdb: %v", err)
+			os.Exit(1)
+		}
+		log.Printf("netgrip: restore-fdb: static FDB entries applied")
 		return
 	}
 

@@ -1443,6 +1443,44 @@ export interface RateProbe {
   egress_supported?: boolean;
 }
 
+/** Aislamiento de bocas (#449): las bocas aisladas solo hablan con las no aisladas. */
+export interface PortIsolationPort {
+  port: string;
+  /** Flag real del kernel (sysfs brport/isolated). */
+  isolated: boolean;
+  /** La boca figura en isolation.conf (aun no re-aplicada, p. ej. tras el arranque). */
+  configured: boolean;
+}
+
+export interface PortIsolationProbe {
+  applicable: boolean;
+  ports: PortIsolationPort[];
+  /** El kernel expone brport/isolated (>= 5.10). */
+  isolated_supported?: boolean;
+}
+
+/** Seguridad de boca (#449): aprendizaje, FDB estatica y limite de MACs. */
+export interface PortSecurityPort {
+  port: string;
+  /** Flag real del kernel (sysfs brport/learning). */
+  learning: boolean;
+  /** learning.conf fija esta boca con el aprendizaje desactivado. */
+  learning_configured: boolean;
+  /** MACs fijas de la boca (fdb.conf). */
+  static_macs: string[];
+}
+
+export interface PortSecurityProbe {
+  applicable: boolean;
+  ports: PortSecurityPort[];
+  /** El kernel expone brport/learning. */
+  learning_supported?: boolean;
+  /** El kernel acepta entradas estaticas FDB (probe netlink real). */
+  fdb_supported?: boolean;
+  /** Siempre false: el bridge del kernel no soporta limite de MACs por boca. */
+  mac_limit_supported?: boolean;
+}
+
 export interface StorageDevice {
   name: string;
   path: string;
