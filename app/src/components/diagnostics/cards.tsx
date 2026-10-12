@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Activity, Globe, Plug, Route, Send } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { api } from "../../api";
 import type { DNSResult, PingResult, SelfTestResult, TCPResult, TracerouteResult } from "../../types";
 import { Banner, Button, Card, Input, Pill, StatusDot } from "../ui";
+import { IconTile, type Tone } from "../ui/IconTile";
 
 /**
- * Diagnóstico de red (issue #305): cinco pruebas guiadas con formulario y
- * tabla de resultados. Cada tarjeta informa su resultado a la página vía
+ * Diagnóstico de red (issue #305): autodiagnóstico + cuatro pruebas
+ * guiadas. Las cuatro viven en UNA tarjeta a ancho completo con dos
+ * columnas internas (#500); cada una informa su resultado a la página vía
  * `onResult` para poder montar el resumen compartible.
  */
 
@@ -24,6 +27,16 @@ function ErrBanner({ error, onRetry }: { error?: string; onRetry: () => void }) 
       action={<Button variant="secondary" size="sm" onClick={onRetry}>{t("common.retry")}</Button>}>
       {error}
     </Banner>
+  );
+}
+
+/** Cabecera de prueba dentro de la tarjeta única (#500). */
+function TestHeader({ icon, tone = "accent", title }: { icon: LucideIcon; tone?: Tone; title: string }) {
+  return (
+    <div className="flex items-center gap-2.5 min-w-0">
+      <IconTile icon={icon} tone={tone} size={28} />
+      <h3 className="text-body font-semibold flex-1 min-w-0">{title}</h3>
+    </div>
   );
 }
 
@@ -64,36 +77,44 @@ export function SelfTestCard({ onResult }: { onResult: (r: SelfTestResult) => vo
     : [];
 
   return (
-    <Card title={t("diagnostics.selfTestTitle")} icon={Activity} iconTone="accent" help="diagnostics">
-      <p className="text-small text-muted mb-3">{t("diagnostics.selfTestDesc")}</p>
-      <Button onClick={run} loading={busy}>
-        {busy ? t("diagnostics.selfTestRunning") : t("diagnostics.selfTestRun")}
-      </Button>
-
-      <ErrBanner error={error} onRetry={run} />
-
-      {result && !error && (
-        <div className="mt-3 flex flex-col gap-2">
-          {checks.map((c) => (
-            <div key={c.key} className="flex items-start gap-2">
-              {/* Amber, not red, for something merely unproven: a provider
-                  that ignores pings is not a fault to chase. */}
-              <StatusDot
-                tone={c.ok ? "ok" : c.info ? "warn" : "danger"}
-                label={c.ok ? t("diagnostics.ok") : c.info ? t("diagnostics.unknown") : t("diagnostics.fail")}
-              />
-              <div className="min-w-0">
-                <span className="text-small">{t(`diagnostics.${c.key}`)}</span>
-                {/* The reason, always: a dot on its own says nothing. */}
-                {c.detail && <div className="text-caption text-muted">{c.detail}</div>}
-                {c.key === "ntp" && <div className="text-caption text-faint">{t("diagnostics.ntpApprox")}</div>}
-              </div>
-            </div>
-          ))}
-          <div className="mt-1">
+    <Card title={t("diagnostics.selfTestTitle")} icon={Activity} iconTone="accent"
+      action={
+        <div className="flex items-center gap-2.5">
+          {result && !error && (
             <Pill tone={result.all_ok ? "ok" : "warn"}>
               {result.all_ok ? t("diagnostics.allGood") : t("diagnostics.someFail")}
             </Pill>
+          )}
+          <Button size="sm" onClick={run} loading={busy}>
+            {busy ? t("diagnostics.selfTestRunning") : t("diagnostics.selfTestRun")}
+          </Button>
+        </div>
+      }
+    >
+      <ErrBanner error={error} onRetry={run} />
+
+      {result && !error && (
+        <div className="flex flex-col gap-2">
+          {/* #500: las comprobaciones en UNA fila bien organizada. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {checks.map((c) => (
+              <div key={c.key} className="flex items-start gap-2 min-w-0">
+                {/* Amber, not red, for something merely unproven: a provider
+                    that ignores pings is not a fault to chase. */}
+                <StatusDot
+                  tone={c.ok ? "ok" : c.info ? "warn" : "danger"}
+                  label={c.ok ? t("diagnostics.ok") : c.info ? t("diagnostics.unknown") : t("diagnostics.fail")}
+                />
+                <div className="min-w-0">
+                  <span className="text-small">{t(`diagnostics.${c.key}`)}</span>
+                  {/* The reason, always: a dot on its own says nothing. */}
+                  {c.detail && (
+                    <div className="text-caption text-muted truncate" title={c.detail}>{c.detail}</div>
+                  )}
+                  {c.key === "ntp" && <div className="text-caption text-faint">{t("diagnostics.ntpApprox")}</div>}
+                </div>
+              </div>
+            ))}
           </div>
           {missingTools.length > 0 && (
             <p className="text-caption text-faint">
@@ -128,8 +149,8 @@ export function PingCard({ onResult }: { onResult: (r: PingResult) => void }) {
   };
 
   return (
-    <Card title={t("diagnostics.pingTitle")} icon={Send} iconTone="teal" help="diagnostics">
-      <p className="text-small text-muted mb-3">{t("diagnostics.pingDesc")}</p>
+    <div className="flex flex-col gap-3 min-w-0">
+      <TestHeader icon={Send} tone="teal" title={t("diagnostics.pingTitle")} />
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex-1 min-w-40 block">
           <span className="mb-1 block text-caption font-medium text-muted">{t("diagnostics.host")}</span>
@@ -177,7 +198,7 @@ export function PingCard({ onResult }: { onResult: (r: PingResult) => void }) {
           </div>
         )
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -202,8 +223,8 @@ export function TracerouteCard({ onResult }: { onResult: (r: TracerouteResult) =
   };
 
   return (
-    <Card title={t("diagnostics.tracerouteTitle")} icon={Route} iconTone="accent" help="diagnostics">
-      <p className="text-small text-muted mb-3">{t("diagnostics.tracerouteDesc")}</p>
+    <div className="flex flex-col gap-3 min-w-0">
+      <TestHeader icon={Route} tone="accent" title={t("diagnostics.tracerouteTitle")} />
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex-1 min-w-40 block">
           <span className="mb-1 block text-caption font-medium text-muted">{t("diagnostics.host")}</span>
@@ -238,7 +259,7 @@ export function TracerouteCard({ onResult }: { onResult: (r: TracerouteResult) =
           </table>
         )
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -264,8 +285,8 @@ export function DnsCard({ onResult }: { onResult: (r: DNSResult) => void }) {
   };
 
   return (
-    <Card title={t("diagnostics.dnsTitle")} icon={Globe} iconTone="accent" help="diagnostics">
-      <p className="text-small text-muted mb-3">{t("diagnostics.dnsDesc")}</p>
+    <div className="flex flex-col gap-3 min-w-0">
+      <TestHeader icon={Globe} tone="accent" title={t("diagnostics.dnsTitle")} />
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex-1 min-w-40 block">
           <span className="mb-1 block text-caption font-medium text-muted">{t("diagnostics.query")}</span>
@@ -308,7 +329,7 @@ export function DnsCard({ onResult }: { onResult: (r: DNSResult) => void }) {
           </div>
         )
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -334,8 +355,8 @@ export function TcpCard({ onResult }: { onResult: (r: TCPResult) => void }) {
   };
 
   return (
-    <Card title={t("diagnostics.tcpTitle")} icon={Plug} iconTone="teal" help="diagnostics">
-      <p className="text-small text-muted mb-3">{t("diagnostics.tcpDesc")}</p>
+    <div className="flex flex-col gap-3 min-w-0">
+      <TestHeader icon={Plug} tone="teal" title={t("diagnostics.tcpTitle")} />
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex-1 min-w-40 block">
           <span className="mb-1 block text-caption font-medium text-muted">{t("diagnostics.host")}</span>
@@ -360,6 +381,6 @@ export function TcpCard({ onResult }: { onResult: (r: TCPResult) => void }) {
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

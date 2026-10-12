@@ -1,16 +1,19 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy } from "lucide-react";
+import { Copy, ListChecks, Wrench } from "lucide-react";
 import { DnsCard, PingCard, SelfTestCard, TcpCard, TracerouteCard } from "../components/diagnostics/cards";
 import { buildShareText } from "../components/diagnostics/share";
-import { Button, useToast } from "../components/ui";
+import { CableTestTool, BounceTool, LoopsTool } from "../components/tools/diagnostics";
+import { Button, Card, useToast } from "../components/ui";
+import type { EthPort } from "../types";
 import type { DNSResult, PingResult, SelfTestResult, TCPResult, TracerouteResult } from "../types";
 
 /**
- * Diagnóstico (issue #305): autodiagnóstico + cuatro pruebas guiadas, con un
- * botón para copiar todos los resultados como texto plano.
+ * Diagnóstico (#500): UN menú para todo lo diagnóstico - autodiagnóstico,
+ * cuatro pruebas de red y las tres herramientas físicas de puertos, todas
+ * en tarjetas a ancho completo con columnas internas.
  */
-export function DiagnosticsPage() {
+export function DiagnosticsPage({ ethports = [] }: { ethports?: EthPort[] }) {
   const { t } = useTranslation();
   const toast = useToast();
   const [selftest, setSelfTest] = useState<SelfTestResult>();
@@ -37,8 +40,7 @@ export function DiagnosticsPage() {
 
   return (
     <div className="flex flex-col gap-[var(--card-gap)]">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-small text-muted">{t("diagnostics.intro")}</p>
+      <div className="flex justify-end">
         <Button variant="secondary" icon={Copy} disabled={!hasResults} onClick={copy}>
           {t("diagnostics.share")}
         </Button>
@@ -46,12 +48,26 @@ export function DiagnosticsPage() {
 
       <SelfTestCard onResult={setSelfTest} />
 
-      <div className="grid grid-cols-1 gap-[var(--card-gap)] md:grid-cols-2">
-        <PingCard onResult={setPing} />
-        <TracerouteCard onResult={setTraceroute} />
-        <DnsCard onResult={setDns} />
-        <TcpCard onResult={setTcp} />
-      </div>
+      {/* #500: las cuatro pruebas en UNA tarjeta a ancho completo, dos
+          columnas internas; el chip (?) de la tarjeta las explica. */}
+      <Card title={t("diagnostics.testsTitle")} icon={ListChecks} help="diagnostics">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-5">
+          <PingCard onResult={setPing} />
+          <TracerouteCard onResult={setTraceroute} />
+          <DnsCard onResult={setDns} />
+          <TcpCard onResult={setTcp} />
+        </div>
+      </Card>
+
+      {/* Herramientas físicas (#500: antes página Herramientas, fusionada
+          aquí): una tarjeta, tres columnas internas. */}
+      <Card title={t("tools.physTitle")} icon={Wrench}>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-5">
+          <CableTestTool />
+          <LoopsTool />
+          <BounceTool ethports={ethports} />
+        </div>
+      </Card>
     </div>
   );
 }

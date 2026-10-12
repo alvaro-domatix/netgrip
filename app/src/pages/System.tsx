@@ -1,22 +1,19 @@
-import type { ReactNode } from "react";
-import type { Board, UpdateCheck } from "../types";
+import { useState, type ReactNode } from "react";
+import type { Board, MDNSProbe, UpdateCheck } from "../types";
 import { useMode } from "../hooks/useMode";
 import { SecurityCard } from "../components/system/SecurityCard";
 import { RemoteAccessCard } from "../components/system/RemoteAccessCard";
 import { AccessCard } from "../components/system/AccessCard";
-import { TelegramCard } from "../components/system/TelegramCard";
-import { NtfyCard } from "../components/system/NtfyCard";
 import { ModeCard } from "../components/system/ModeCard";
 import { IdentityCard } from "../components/system/IdentityCard";
+import { IntegrationsCard } from "../components/system/IntegrationsCard";
 import { NetPulseCard } from "../components/system/NetPulseCard";
-import { MQTTCard } from "../components/system/MQTTCard";
 import { ConfigBackupCard } from "../components/ConfigBackupCard";
-import { SnmpCard } from "../components/advanced/SnmpCard";
 import { UpdateCard } from "../components/system/UpdateCard";
 import { SelfUpdateCard } from "../components/system/SelfUpdateCard";
 import { WizardRelaunchCard } from "../components/system/WizardRelaunchCard";
-import { AdvancedCard } from "../components/system/AdvancedCard";
 import { OptionsCard } from "../components/system/OptionsCard";
+import { MdnsCard } from "../components/services/MdnsCard";
 import { NetPulseStandaloneBanner, NetPulseStatusChip } from "../components/system/NetPulseStatus";
 import { useTranslation } from "react-i18next";
 
@@ -37,6 +34,8 @@ export function System({ board, update, onUpdateChange, onLogout }: {
   onLogout: () => void;
 }) {
   const { t } = useTranslation();
+  // (#500) Estado del probe mDNS: la tarjeta "Nombre local" vive aquí.
+  const [mdnsProbe, setMdnsProbe] = useState<MDNSProbe>();
   // (#484) Solo el gateway gestiona acceso remoto, modo de operación y el
   // asistente inicial. Las tres tarjetas son gateway-only: no se pintan
   // hasta conocer el rol (useMode hidrata desde caché, así que en recargas
@@ -50,57 +49,44 @@ export function System({ board, update, onUpdateChange, onLogout }: {
   const canSwitchMode = modeReady && role !== "switch";
   return (
     <div className="flex flex-col gap-6">
-      {/* Protección */}
+      {/* Protección y acceso (#499/#500): la contraseña, al final de la
+          sección; las tarjetas SIEMPRE al 100% del ancho. */}
       <section className="flex flex-col gap-[var(--card-gap)]">
         <GroupLabel>{t("system.groupProtection")}</GroupLabel>
-        <SecurityCard index={0} onLogout={onLogout} />
+        <AccessCard index={0} />
         {isRouter && <RemoteAccessCard index={1} />}
-        <AccessCard index={2} />
-        <TelegramCard index={3} />
-        <NtfyCard index={4} />
+        <SecurityCard index={2} onLogout={onLogout} />
       </section>
 
-      {/* Este equipo */}
+      {/* Este equipo: modo, avisos, copia de config y preferencias.
+          #499/#500: Telegram/ntfy/MQTT colapsados en una sola tarjeta;
+          SNMP fuera de aquí (vive en Servicios). */}
       <section className="flex flex-col gap-[var(--card-gap)]">
         <GroupLabel>{t("system.groupDevice")}</GroupLabel>
         <NetPulseStandaloneBanner />
         <NetPulseStatusChip />
         {canSwitchMode && <ModeCard index={0} />}
-        <IdentityCard index={1} board={board} />
-        {!NETPULSE_CARD_HIDDEN && <NetPulseCard index={2} />}
-        <MQTTCard index={2} />
-        <SelfUpdateCard index={3} />
+        {!NETPULSE_CARD_HIDDEN && <NetPulseCard index={1} />}
+        <IntegrationsCard index={2} />
+        {/* #500: "Nombre local" (mDNS) vive aquí, también en APs; en
+            switches gestionados no aplica. */}
+        {canSwitchMode && <MdnsCard probe={mdnsProbe} onChange={setMdnsProbe} index={3} />}
         <ConfigBackupCard index={4} />
+        <OptionsCard index={5} />
+        {isRouter && <WizardRelaunchCard index={6} />}
       </section>
 
-      {/* Monitorización (#487): SNMP llegaba de la página "Redes"
-          avanzada, eliminada en el rediseño: el daemon snmpd se gestiona
-          aquí, junto al resto de opciones de este equipo. */}
+      {/* Actualizaciones (#499): última sección, con la identidad y el
+          reinicio al final de todo (orden pedido por el usuario). */}
       <section className="flex flex-col gap-[var(--card-gap)]">
-        <GroupLabel>{t("system.groupMonitoring")}</GroupLabel>
-        <SnmpCard index={0} />
-      </section>
-
-      {/* Mantenimiento (#155): actualización de la imagen OpenWrt. La rama
-          de paquetes se oculta por diseño: la paquetería se gestiona desde
-          LuCI o CLI (`apk upgrade`), no desde esta tarjeta. #415: relanzar
-          el asistente inicial bajo demanda. */}
-      <section className="flex flex-col gap-[var(--card-gap)]">
-        <GroupLabel>{t("system.groupMaintenance")}</GroupLabel>
+        <GroupLabel>{t("system.groupUpdates")}</GroupLabel>
+        <SelfUpdateCard index={0} />
         <UpdateCard
           board={board}
           update={update}
           onChange={onUpdateChange}
         />
-        {isRouter && <WizardRelaunchCard index={1} />}
-      </section>
-
-      {/* Opciones (#158): preferencias de la interfaz (idioma, densidad,
-          tema). La barra superior solo conserva el toggle rápido de tema. */}
-      <section className="flex flex-col gap-[var(--card-gap)]">
-        <GroupLabel>{t("system.groupOptions")}</GroupLabel>
-        <OptionsCard index={0} />
-        <AdvancedCard index={1} />
+        <IdentityCard index={1} board={board} />
       </section>
     </div>
   );

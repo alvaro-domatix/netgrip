@@ -1,11 +1,10 @@
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
-import type { DDNSProbe, MDNSProbe, OVPNProbe, SQMProbe, TSProbe, WGProbe } from "../types";
+import type { DDNSProbe, OVPNProbe, SQMProbe, TSProbe, WGProbe } from "../types";
 import { WireguardCard } from "../components/services/WireguardCard";
 import { OpenvpnCard } from "../components/services/OpenvpnCard";
 import { TailscaleCard } from "../components/services/TailscaleCard";
 import { DdnsCard } from "../components/services/DdnsCard";
-import { MdnsCard } from "../components/services/MdnsCard";
 import { SqmCard } from "../components/services/SqmCard";
 import { NlbwmonCard } from "../components/services/NlbwmonCard";
 import { FirewallCard } from "../components/services/FirewallCard";
@@ -27,13 +26,11 @@ function GroupHeader({ title, desc, index }: { title: string; desc: string; inde
  * Servicios (services.md): toggles con superpoderes agrupados por tarea.
  * Entrada escalonada por grupo (VPN inmediato, siguientes +80ms).
  */
-export function Services({ wg, onWgChange, ddns, onDdnsChange, mdns, onMdnsChange, sqm, onSqmChange, ovpn, onOvpnChange, ts, onTsChange, apMode = false, onNavigate }: {
+export function Services({ wg, onWgChange, ddns, onDdnsChange, sqm, onSqmChange, ovpn, onOvpnChange, ts, onTsChange, apMode = false, onNavigate }: {
   wg: WGProbe | undefined;
   onWgChange: (p: WGProbe) => void;
   ddns: DDNSProbe | undefined;
   onDdnsChange: (p: DDNSProbe) => void;
-  mdns: MDNSProbe | undefined;
-  onMdnsChange: (p: MDNSProbe) => void;
   sqm: SQMProbe | undefined;
   onSqmChange: (p: SQMProbe) => void;
   ovpn: OVPNProbe | undefined;
@@ -46,36 +43,49 @@ export function Services({ wg, onWgChange, ddns, onDdnsChange, mdns, onMdnsChang
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-6 md:gap-8">
-      {/* Bloqueo y reglas — el bloqueador de anuncios arriba */}
+      {/* Bloqueo y reglas — el bloqueador de anuncios arriba. Contabilidad
+          y bloqueo solo en el gateway (#500): un AP no enruta, así que
+          nlbwmon no puede contar tráfico por equipo. El encabezado también
+          solo en gateway: describe funciones que en un AP no se pintan. */}
       <section className="flex flex-col gap-[var(--card-gap)]">
-        <GroupHeader index={0} title={t("services.groupRules")} desc={t("services.groupRulesDesc")} />
+        {!apMode && (
+          <GroupHeader index={0} title={t("services.groupRules")} desc={t("services.groupRulesDesc")} />
+        )}
         <AdguardCard index={0} />
-        <NlbwmonCard index={0} />
+        {!apMode && <NlbwmonCard index={0} />}
         {!apMode && <FirewallCard index={0} />}
         {!apMode && <BanipCard index={0} onNavigate={onNavigate} />}
       </section>
 
-      {/* Tu conexión — cómo sale tu casa a Internet */}
+      {/* Tu conexión — cómo sale tu casa a Internet. Solo gateway: desde
+          #500 "Nombre local" (mDNS) vive en Ajustes, también en APs. */}
       <section className="flex flex-col gap-[var(--card-gap)]">
-        <GroupHeader index={2} title={t("services.groupConn")} desc={t("services.groupConnDesc")} />
+        {!apMode && (
+          <GroupHeader index={2} title={t("services.groupConn")} desc={t("services.groupConnDesc")} />
+        )}
         {!apMode && <DdnsCard probe={ddns} onChange={onDdnsChange} index={2} />}
-        <MdnsCard probe={mdns} onChange={onMdnsChange} index={2} />
         {!apMode && <SqmCard probe={sqm} onChange={onSqmChange} index={2} />}
       </section>
 
-      {/* VPN — para entrar a tu casa desde fuera (al final) */}
+      {/* VPN — para entrar a tu casa desde fuera (al final). Solo gateway:
+          un AP no enruta, así que los túneles no aplican (#500). */}
+      {!apMode && (
       <section className="flex flex-col gap-[var(--card-gap)]">
         <GroupHeader index={4} title={t("services.groupVpn")} desc={t("services.groupVpnDesc")} />
         <WireguardCard probe={wg} onChange={onWgChange} index={4} />
         <OpenvpnCard probe={ovpn} onChange={onOvpnChange} index={4} />
         <TailscaleCard probe={ts} onChange={onTsChange} index={4} />
       </section>
+      )}
 
-      {/* Servicios locales: tus servicios self-hosted en otras máquinas */}
+      {/* Servicios locales: tus servicios self-hosted en otras máquinas.
+          Solo gateway (#500): en un AP es información ajena a su función. */}
+      {!apMode && (
       <section className="flex flex-col gap-[var(--card-gap)]">
         <GroupHeader index={6} title={t("services.groupLocal")} desc={t("services.groupLocalDesc")} />
         <LanServicesCard />
       </section>
+      )}
     </div>
   );
 }
