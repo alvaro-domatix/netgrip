@@ -166,6 +166,20 @@ export interface LldpProbe {
   neighbors: LldpNeighbor[];
 }
 
+/** Entrada de la tabla MAC dinamica (FDB) del bridge LAN. */
+export interface FdbEntry {
+  port: string;
+  mac: string;
+  local: boolean;
+  ageing: string;
+}
+
+export interface FdbProbe {
+  applicable: boolean;
+  bridge: string;
+  entries: FdbEntry[];
+}
+
 
 export interface SQMProbe {
   installed: boolean;

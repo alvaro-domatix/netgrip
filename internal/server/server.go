@@ -319,6 +319,7 @@ func New(rpcdURL, version string, secure bool, servingCert string) *Server {
 	s.mux.HandleFunc("GET /api/mac-acl", s.requireAuth(s.handleMACACLGet))
 	s.mux.HandleFunc("POST /api/mac-acl", s.requireAuth(s.handleMACACLSet))
 	s.mux.HandleFunc("GET /api/lldp", s.requireAuth(s.handleLLDPGet))
+	s.mux.HandleFunc("GET /api/fdb", s.requireAuth(s.handleFdbGet))
 	s.mux.HandleFunc("POST /api/lldp", s.requireAuth(s.handleLLDPSet))
 	s.mux.HandleFunc("GET /api/netpulse", s.requireAuth(s.handleNetPulseGet))
 	s.mux.HandleFunc("POST /api/netpulse", s.requireAuth(s.handleNetPulseSet))
@@ -1592,6 +1593,10 @@ func (s *Server) handleLLDPSet(w http.ResponseWriter, r *http.Request) {
 	}
 	probe, rolledBack, err := modules.SetLLDP(req.Enabled)
 	writeModuleResult(w, probe, rolledBack, err)
+}
+
+func (s *Server) handleFdbGet(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, modules.ProbeFdb())
 }
 
 

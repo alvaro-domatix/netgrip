@@ -150,6 +150,10 @@ export default {
       title: "Vecinos LLDP",
       body: "Muestra qué equipo hay al otro lado de cada cable, tal como se anuncian los propios equipos (LLDP/CDP). Necesita el paquete lldpd, que se instala bajo demanda.",
     },
+    fdb: {
+      title: "Tabla MAC",
+      body: "Las MAC que el switch ha aprendido en cada boca y hace cuánto las vio por última vez. Vista de solo lectura de la base de datos de reenvío del bridge.",
+    },
 
     login: {
       title: "¿Qué contraseña es?",

@@ -150,6 +150,10 @@ export default {
       title: "LLDP neighbors",
       body: "Shows which device sits on the other end of each cable, as announced by the devices themselves (LLDP/CDP). Needs the lldpd package, installed on demand.",
     },
+    fdb: {
+      title: "MAC table",
+      body: "The MAC addresses the switch has learned on each port, and how long ago it last saw them. Read-only view of the bridge's forwarding database.",
+    },
 
     login: {
       title: "Which password?",

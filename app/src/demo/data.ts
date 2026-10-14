@@ -159,6 +159,19 @@ export const demoLldp: T.LldpProbe = {
   ],
 };
 
+export const demoFdb: T.FdbProbe = {
+  applicable: true,
+  bridge: "br-lan",
+  entries: [
+    { port: "lan1", mac: "aa:bb:cc:11:22:01", local: false, ageing: "4.21" },
+    { port: "lan1", mac: "aa:bb:cc:11:22:02", local: false, ageing: "12.87" },
+    { port: "lan2", mac: "aa:bb:cc:33:44:01", local: false, ageing: "0.42" },
+    { port: "lan3", mac: "aa:bb:cc:55:66:01", local: false, ageing: "33.10" },
+    { port: "lan4", mac: "aa:bb:cc:77:88:01", local: false, ageing: "1.05" },
+    { port: "wan", mac: "aa:bb:cc:99:00:01", local: true, ageing: "0.00" },
+  ],
+};
+
 
 export const demoSqm: T.SQMProbe = {
   installed: true,

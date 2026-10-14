@@ -252,6 +252,7 @@ const realApi = {
       body: JSON.stringify({ enabled }),
     }),
   lldp: () => request<import("./types").LldpProbe>("/api/lldp"),
+  fdb: () => request<import("./types").FdbProbe>("/api/fdb"),
   setLldp: (enabled: boolean) =>
     request<import("./types").ModuleResult<import("./types").LldpProbe>>("/api/lldp", {
       method: "POST",

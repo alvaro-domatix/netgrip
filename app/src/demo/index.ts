@@ -28,6 +28,7 @@ const state = {
   ddns: { ...D.demoDdns },
   mdns: { ...D.demoMdns },
   lldp: structuredClone(D.demoLldp),
+  fdb: structuredClone(D.demoFdb),
   sqm: { ...D.demoSqm },
   ovpn: structuredClone(D.demoOvpn),
   ipv6: { ...D.demoIpv6 },
@@ -308,6 +309,7 @@ export const demoApi: typeof api = {
     return write(state.mdns);
   },
   lldp: () => get(state.lldp),
+  fdb: () => get(state.fdb),
   setLldp: async (enabled) => {
     state.lldp.installed = true;
     state.lldp.enabled = state.lldp.running = state.lldp.tx_enabled = enabled;

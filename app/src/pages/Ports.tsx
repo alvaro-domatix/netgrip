@@ -15,6 +15,7 @@ import { IgmpCard, MacAclCard, StormControlCard } from "../components/tools/adva
 import { MirrorCard, RateLimitCard } from "../components/ports/TrafficCards";
 import { PortIsolationCard, PortSecurityCard } from "../components/ports/SecurityCards";
 import { LldpCard } from "../components/ports/LldpCard";
+import { MacTableCard } from "../components/ports/MacTableCard";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 
 /**
@@ -116,6 +117,7 @@ export function Ports({ ethports }: { ethports?: EthPort[] }) {
       {active === "neighbors" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[var(--card-gap)]">
           <LldpCard index={0} />
+          <MacTableCard index={1} />
         </div>
       )}
 
