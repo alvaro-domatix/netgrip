@@ -312,6 +312,89 @@ export const demoMode: T.ModeProbe = {
   port_count: 5,
 };
 
+// Escenarios alternativos (?demo=ap / ?demo=switch): mismo escenario García
+// visto desde los otros dos roles de dispositivo.
+
+export const demoModeAp: T.ModeProbe = {
+  role: "ap",
+  mode: "ap",
+  hardware_class: "router",
+  wan_in_bridge: true,
+  wan_configured: false,
+  dnsmasq_on: false,
+  firewall_on: false,
+  has_wifi: true,
+  port_count: 4,
+};
+
+export const demoEthPortsAp: T.EthPort[] = [
+  { name: "lan1", wan: true, up: true, speed_mbps: 1000, devices: [{ mac: "00:11:32:9A:BC:10", name: "Gateway" }] },
+  { name: "lan2", wan: false, up: true, speed_mbps: 1000, devices: [{ mac: "70:2A:D5:44:09:E1", name: "TV Samsung Salón" }] },
+  { name: "lan3", wan: false, up: false, speed_mbps: 0, devices: [] },
+  { name: "lan4", wan: false, up: true, speed_mbps: 100, devices: [{ mac: "C8:2B:96:33:77:19", name: "Impresora HP" }] },
+];
+
+export const demoModeSwitch: T.ModeProbe = {
+  role: "switch",
+  mode: "ap",
+  hardware_class: "switch",
+  wan_in_bridge: true,
+  wan_configured: false,
+  dnsmasq_on: false,
+  firewall_on: false,
+  has_wifi: false,
+  port_count: 24,
+};
+
+const swp = (n: number, up: boolean, speed: number, devices: T.EthDevice[] = []): T.EthPort =>
+  ({ name: `swp${n}`, wan: n === 24, up, speed_mbps: speed, devices });
+
+export const demoEthPortsSwitch: T.EthPort[] = [
+  swp(1, true, 1000, [{ mac: "00:11:32:9A:BC:10", name: "NAS" }]),
+  swp(2, true, 1000, [{ mac: "70:2A:D5:44:09:E1", name: "TV Samsung Salón" }]),
+  swp(3, true, 100, [{ mac: "C8:2B:96:33:77:19", name: "Impresora HP" }]),
+  swp(4, false, 0),
+  swp(5, true, 1000, [{ mac: "8C:85:90:11:22:33", name: "AP Ático" }]),
+  swp(6, true, 1000, [{ mac: "8C:85:90:44:55:66", name: "AP Garaje" }]),
+  swp(7, false, 0), swp(8, false, 0),
+  swp(9, true, 1000, [{ mac: "DC:A6:32:AA:BB:01", name: "PC Estudio" }]),
+  swp(10, true, 2500, [{ mac: "DC:A6:32:AA:BB:02", name: "Servidor" }]),
+  swp(11, false, 0), swp(12, false, 0), swp(13, false, 0), swp(14, false, 0),
+  swp(15, true, 1000, [{ mac: "3C:7A:AA:11:22:44", name: "Cámara Porche" }]),
+  swp(16, true, 1000, [{ mac: "3C:7A:AA:11:22:55", name: "Cámara Jardín" }]),
+  swp(17, false, 0), swp(18, false, 0), swp(19, false, 0), swp(20, false, 0),
+  swp(21, false, 0), swp(22, false, 0), swp(23, false, 0),
+  swp(24, true, 1000, [{ mac: "00:11:32:FF:EE:01", name: "Gateway" }]),
+];
+
+export const demoLldpSwitch: T.LldpProbe = {
+  installed: true,
+  enabled: true,
+  running: true,
+  tx_enabled: true,
+  neighbors: [
+    { interface: "swp24", protocol: "LLDP", chassis_id: "aa:bb:cc:dd:ee:01", chassis_name: "gateway", sys_descr: "NetGrip router", mgmt_ip: "192.168.1.1", port_id: "lan1", ttl: "120" },
+    { interface: "swp5", protocol: "LLDP", chassis_id: "aa:bb:cc:dd:ee:02", chassis_name: "ap-atico", sys_descr: "NetGrip AP", mgmt_ip: "192.168.1.31", port_id: "wan", ttl: "120" },
+    { interface: "swp6", protocol: "LLDP", chassis_id: "aa:bb:cc:dd:ee:03", chassis_name: "ap-garaje", sys_descr: "NetGrip AP", mgmt_ip: "192.168.1.32", port_id: "wan", ttl: "120" },
+  ],
+};
+
+export const demoFdbSwitch: T.FdbProbe = {
+  applicable: true,
+  bridge: "br-lan",
+  entries: [
+    { port: "swp1", mac: "00:11:32:9a:bc:10", local: false, ageing: "4.21" },
+    { port: "swp2", mac: "70:2a:d5:44:09:e1", local: false, ageing: "12.87" },
+    { port: "swp3", mac: "c8:2b:96:33:77:19", local: false, ageing: "0.42" },
+    { port: "swp5", mac: "8c:85:90:11:22:33", local: false, ageing: "1.02" },
+    { port: "swp6", mac: "8c:85:90:44:55:66", local: false, ageing: "2.14" },
+    { port: "swp9", mac: "dc:a6:32:aa:bb:01", local: false, ageing: "8.33" },
+    { port: "swp10", mac: "dc:a6:32:aa:bb:02", local: false, ageing: "0.11" },
+    { port: "swp15", mac: "3c:7a:aa:11:22:44", local: false, ageing: "44.09" },
+    { port: "swp24", mac: "00:11:32:ff:ee:01", local: false, ageing: "0.05" },
+  ],
+};
+
 export const demoAccess: T.AccessProbe = {
   panel: { http_port: 8090, https_enabled: true, force_https: false, session_ttl: "60m" },
   luci: { http_port: 80, https_port: 443, force_https: false, enabled: true },
