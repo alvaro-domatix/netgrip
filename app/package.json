@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit",
-    "test": "node --test src/lib/"
+    "test": "node --test src/lib/*.test.mjs"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",

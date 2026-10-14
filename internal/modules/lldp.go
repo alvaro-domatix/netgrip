@@ -179,10 +179,10 @@ type lldpcliIface struct {
 	Name    string `json:"name"`
 	Via     string `json:"via"`
 	Chassis []struct {
-		ID      lldpcliID `json:"id"`
-		Name    tlv       `json:"name"`
-		Descr   tlv       `json:"descr"`
-		MgmtIP  tlv       `json:"mgmt-ip"`
+		ID     lldpcliID `json:"id"`
+		Name   tlv       `json:"name"`
+		Descr  tlv       `json:"descr"`
+		MgmtIP tlv       `json:"mgmt-ip"`
 	} `json:"chassis"`
 	Port []struct {
 		ID    lldpcliID `json:"id"`
