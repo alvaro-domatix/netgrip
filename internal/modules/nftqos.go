@@ -73,6 +73,9 @@ func SetNftQoSLimit(req NftQoSSetRequest) (*NftQoSProbe, bool, error) {
 	if req.IP == "" {
 		return ProbeNftQoS(), false, fmt.Errorf("ip is required")
 	}
+	if !reIPv4.MatchString(req.IP) {
+		return ProbeNftQoS(), false, fmt.Errorf("invalid ip %q", req.IP)
+	}
 	if !hasWan() {
 		return ProbeNftQoS(), false, fmt.Errorf("per-device QoS only applies to the gateway router")
 	}
