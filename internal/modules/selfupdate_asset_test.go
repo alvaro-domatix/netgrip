@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"sync"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -47,17 +48,26 @@ func TestBinaryAssetNameUsesReleaseArchitecture(t *testing.T) {
 	}
 }
 
-func stubUpdater(t *testing.T) (*atomic.Bool, *[]string) {
+func stubUpdater(t *testing.T) (*atomic.Bool, func() []string) {
 	t.Helper()
 	called := &atomic.Bool{}
+	// urls va tras mutex: el stub corre en la goroutine que lanza
+	// StartSelfUpdate y el test lo lee tras waitFor (race detector).
+	var mu sync.Mutex
 	var urls []string
 	orig := runSelfUpdateF
 	runSelfUpdateF = func(assetURL string, _ int64, _ string) {
-		called.Store(true)
+		mu.Lock()
 		urls = append(urls, assetURL)
+		mu.Unlock()
+		called.Store(true)
 	}
 	t.Cleanup(func() { runSelfUpdateF = orig })
-	return called, &urls
+	return called, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return append([]string(nil), urls...)
+	}
 }
 
 func resetUpdateState(t *testing.T) {
@@ -122,14 +132,14 @@ func TestCheckSelfUpdateSameVersionNoPending(t *testing.T) {
 
 func TestStartSelfUpdateRechecksEmptyCache(t *testing.T) {
 	withAPI(t, releaseWithAsset)
-	called, urls := stubUpdater(t)
+	called, runnerURLs := stubUpdater(t)
 
 	if err := StartSelfUpdate("0.62.0"); err != nil {
 		t.Fatalf("StartSelfUpdate: %v", err)
 	}
 	waitFor(t, called.Load)
-	if len(*urls) != 1 || (*urls)[0] != "http://example.com/"+binaryAssetName() {
-		t.Fatalf("runner urls = %v", *urls)
+	if got := runnerURLs(); len(got) != 1 || got[0] != "http://example.com/"+binaryAssetName() {
+		t.Fatalf("runner urls = %v", got)
 	}
 }
 
@@ -171,7 +181,7 @@ func TestStartSelfUpdateUsesValidCacheWithoutRecheck(t *testing.T) {
 	githubAPIURL = srv.URL
 	t.Cleanup(func() { githubAPIURL = orig })
 
-	called, urls := stubUpdater(t)
+	called, runnerURLs := stubUpdater(t)
 
 	updateMu.Lock()
 	updateCheck = &SelfUpdateCheck{
@@ -187,8 +197,8 @@ func TestStartSelfUpdateUsesValidCacheWithoutRecheck(t *testing.T) {
 		t.Fatalf("StartSelfUpdate with valid cache: %v", err)
 	}
 	waitFor(t, called.Load)
-	if len(*urls) != 1 || (*urls)[0] != "http://example.com/cached" {
-		t.Fatalf("runner urls = %v, want cached url", *urls)
+	if got := runnerURLs(); len(got) != 1 || got[0] != "http://example.com/cached" {
+		t.Fatalf("runner urls = %v, want cached url", got)
 	}
 }
 
