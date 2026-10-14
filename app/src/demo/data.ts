@@ -147,6 +147,19 @@ export const demoMdns: T.MDNSProbe = {
   domain: "casa.local",
 };
 
+export const demoLldp: T.LldpProbe = {
+  installed: true,
+  enabled: true,
+  running: true,
+  tx_enabled: true,
+  neighbors: [
+    { interface: "lan1", protocol: "LLDP", chassis_id: "aa:bb:cc:dd:ee:01", chassis_name: "switch-cuarto", sys_descr: "NetGrip LGS352C", mgmt_ip: "192.168.1.2", port_id: "lan5", port_descr: "uplink", ttl: "120" },
+    { interface: "lan2", protocol: "LLDP", chassis_id: "aa:bb:cc:dd:ee:02", chassis_name: "ap-atico", sys_descr: "NetGrip AP", mgmt_ip: "192.168.1.3", port_id: "wan", ttl: "120" },
+    { interface: "lan4", protocol: "CDP", chassis_id: "aa:bb:cc:dd:ee:03", chassis_name: "impresora", port_id: "eth0", ttl: "180" },
+  ],
+};
+
+
 export const demoSqm: T.SQMProbe = {
   installed: true,
   has_wan: true,

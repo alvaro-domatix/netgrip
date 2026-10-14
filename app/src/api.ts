@@ -251,6 +251,13 @@ const realApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled }),
     }),
+  lldp: () => request<import("./types").LldpProbe>("/api/lldp"),
+  setLldp: (enabled: boolean) =>
+    request<import("./types").ModuleResult<import("./types").LldpProbe>>("/api/lldp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    }),
   wifi: () => request<{ interfaces: import("./types").WifiUI[] }>("/api/wifi"),
   wifiKey: (section: string) => request<{ key: string }>(`/api/wifi/key?section=${encodeURIComponent(section)}`),
   setWifi: (edit: { section: string; sections?: string[]; ssid?: string; key?: string; encryption?: string; hidden?: boolean; disabled?: boolean; mac?: string }) =>

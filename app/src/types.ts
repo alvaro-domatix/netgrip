@@ -145,6 +145,28 @@ export interface MDNSProbe {
   domain: string;
 }
 
+/** Vecino descubierto por lldpd (LLDP/CDP), visto por una boca local. */
+export interface LldpNeighbor {
+  interface: string;
+  protocol: string;
+  chassis_id: string;
+  chassis_name: string;
+  sys_descr?: string;
+  mgmt_ip?: string;
+  port_id: string;
+  port_descr?: string;
+  ttl?: string;
+}
+
+export interface LldpProbe {
+  installed: boolean;
+  enabled: boolean;
+  running: boolean;
+  tx_enabled: boolean;
+  neighbors: LldpNeighbor[];
+}
+
+
 export interface SQMProbe {
   installed: boolean;
   has_wan: boolean;

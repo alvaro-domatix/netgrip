@@ -146,6 +146,11 @@ export default {
     },
   },
   help: {
+    lldp: {
+      title: "Vecinos LLDP",
+      body: "Muestra qué equipo hay al otro lado de cada cable, tal como se anuncian los propios equipos (LLDP/CDP). Necesita el paquete lldpd, que se instala bajo demanda.",
+    },
+
     login: {
       title: "¿Qué contraseña es?",
       body: "La contraseña de administrador del router: la misma que usarías para entrar en LuCI. NetGrip no guarda usuarios propios; valida directamente contra el router.",
@@ -1393,6 +1398,27 @@ export default {
       traffic: "Tráfico",
       optics: "Ópticas",
       profiles: "Perfiles y seguridad",
+      neighbors: "Vecinos",
+    },
+    lldp: {
+      title: "Vecinos LLDP",
+      notInstalled: "El descubrimiento de vecinos necesita el paquete lldpd. Instálalo para ver qué equipo hay al otro lado de cada boca.",
+      install: "Instalar lldpd",
+      daemon: "Descubrimiento de vecinos (lldpd)",
+      running: "en marcha",
+      stopped: "parado",
+      stoppedHint: "Arranca el descubrimiento para ver vecinos.",
+      empty: "Aún no hay vecinos. Aparecen cuando los equipos conectados se anuncian.",
+      onPort: "en {{port}}",
+      theirPort: "su boca {{port}}",
+    },
+    fdb: {
+      title: "Tabla MAC",
+      filterPlaceholder: "Filtra MAC o boca",
+      empty: "Aún no hay MACs aprendidas.",
+      emptyFilter: "Nada coincide con ese filtro.",
+      summary: "{{count}} MACs en {{ports}} bocas (bridge {{bridge}})",
+      local: "local",
     },
     empty: "Sin puertos físicos detectados",
     up: "enlace",

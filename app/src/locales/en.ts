@@ -146,6 +146,11 @@ export default {
     },
   },
   help: {
+    lldp: {
+      title: "LLDP neighbors",
+      body: "Shows which device sits on the other end of each cable, as announced by the devices themselves (LLDP/CDP). Needs the lldpd package, installed on demand.",
+    },
+
     login: {
       title: "Which password?",
       body: "The router's admin password: the same one you'd use for LuCI. NetGrip keeps no user database; it validates straight against the router.",
@@ -1393,6 +1398,27 @@ export default {
       traffic: "Traffic",
       optics: "Optics",
       profiles: "Profiles and security",
+      neighbors: "Neighbors",
+    },
+    lldp: {
+      title: "LLDP neighbors",
+      notInstalled: "Neighbor discovery needs the lldpd package. Install it to see which device is on the other end of each port.",
+      install: "Install lldpd",
+      daemon: "Neighbor discovery (lldpd)",
+      running: "running",
+      stopped: "stopped",
+      stoppedHint: "Start discovery to see neighbors.",
+      empty: "No neighbors yet. They show up once connected devices announce themselves.",
+      onPort: "on {{port}}",
+      theirPort: "their port {{port}}",
+    },
+    fdb: {
+      title: "MAC table",
+      filterPlaceholder: "Filter MAC or port",
+      empty: "No learned MACs yet.",
+      emptyFilter: "Nothing matches that filter.",
+      summary: "{{count}} MACs on {{ports}} ports (bridge {{bridge}})",
+      local: "local",
     },
     empty: "No physical ports detected",
     up: "link",

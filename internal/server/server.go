@@ -318,6 +318,8 @@ func New(rpcdURL, version string, secure bool, servingCert string) *Server {
 	s.mux.HandleFunc("POST /api/storage", s.requireAuth(s.handleStorageSet))
 	s.mux.HandleFunc("GET /api/mac-acl", s.requireAuth(s.handleMACACLGet))
 	s.mux.HandleFunc("POST /api/mac-acl", s.requireAuth(s.handleMACACLSet))
+	s.mux.HandleFunc("GET /api/lldp", s.requireAuth(s.handleLLDPGet))
+	s.mux.HandleFunc("POST /api/lldp", s.requireAuth(s.handleLLDPSet))
 	s.mux.HandleFunc("GET /api/netpulse", s.requireAuth(s.handleNetPulseGet))
 	s.mux.HandleFunc("POST /api/netpulse", s.requireAuth(s.handleNetPulseSet))
 	s.mux.HandleFunc("GET /api/mqtt", s.requireAuth(s.handleMQTTGet))
@@ -1570,6 +1572,28 @@ func (s *Server) handleMDNSSet(w http.ResponseWriter, r *http.Request) {
 	probe, rolledBack, err := modules.SetMDNS(req.Enabled)
 	writeModuleResult(w, probe, rolledBack, err)
 }
+
+func (s *Server) handleLLDPGet(w http.ResponseWriter, _ *http.Request) {
+	probe, _ := modules.CachedRead("lldp", probeCacheTTL, func() (*modules.LldpProbe, error) {
+		return modules.ProbeLLDP(), nil
+	})
+	writeJSON(w, probe)
+}
+
+type lldpSetRequest struct {
+	Enabled bool `json:"enabled"`
+}
+
+func (s *Server) handleLLDPSet(w http.ResponseWriter, r *http.Request) {
+	var req lldpSetRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	probe, rolledBack, err := modules.SetLLDP(req.Enabled)
+	writeModuleResult(w, probe, rolledBack, err)
+}
+
 
 func (s *Server) handleWifiGet(w http.ResponseWriter, _ *http.Request) {
 	ui, err := modules.ProbeWifiUI()
