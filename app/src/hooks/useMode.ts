@@ -7,8 +7,12 @@ import type { ModeProbe } from "../types";
  * último probe cacheado en localStorage y el probe real se refetcha en
  * segundo plano. Sin esto, hasta que llegaba /api/mode el nav se quedaba
  * permisivo y las entradas gateadas por rol parpadeaban al recargar.
- * En demo api.mode() delega en demoApi (escenario García), así que la ruta
- * es la misma y el menú completo del demo no cambia.
+ * En demo api.mode() delega en demoApi, así que la ruta es la misma.
+ *
+ * Store compartido a nivel de módulo: todos los consumidores (Shell,
+ * Overview, System, ModeCard) leen el mismo valor y se hace UN solo fetch
+ * por carga; refreshMode() invalida la caché y refetchea (tras cambiar el
+ * modo router/AP), actualizando el nav sin recargar la página.
  */
 const CACHE_KEY = "netgrip.mode.v1";
 
@@ -32,33 +36,61 @@ function readCache(): ModeProbe | undefined {
   }
 }
 
+let current: ModeProbe | undefined = readCache();
+let fetchStarted = false;
+const listeners = new Set<() => void>();
+
+function notify() {
+  for (const l of listeners) l();
+}
+
+function fetchMode() {
+  api
+    .mode()
+    .then((m) => {
+      current = m;
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(m));
+      } catch {
+        // Sin localStorage (modo privado) el gating sigue funcionando
+        // con el probe; solo se pierde la hidratación instantánea.
+      }
+      notify();
+    })
+    .catch(() => {
+      // Probe caído: se conserva la caché si la hay. Sin caché el rol
+      // queda desconocido y el nav se queda en lo no gateado (overview).
+    });
+}
+
+/** Invalida la caché y refetchea el probe: tras un cambio de modo el rol
+ *  nuevo llega a todos los consumidores sin recargar. */
+export function refreshMode() {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {
+    // Sin localStorage no hay caché que invalidar.
+  }
+  fetchMode();
+}
+
 /** { mode, modeReady }: modeReady = hay un valor fiable (caché o probe).
  *  Hasta entonces los consumidores deben tratar el rol como desconocido y
  *  no pintar nada gateado por rol. */
 export function useMode(): { mode: ModeProbe | undefined; modeReady: boolean } {
-  // Estado inicial desde la caché: en una recarga el nav sale ya recortado
-  // al rol real, sin esperar al probe.
-  const [mode, setMode] = useState<ModeProbe | undefined>(() => readCache());
+  const [mode, setMode] = useState<ModeProbe | undefined>(current);
 
   useEffect(() => {
-    let alive = true;
-    api.mode()
-      .then((m) => {
-        if (!alive) return;
-        setMode(m);
-        try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify(m));
-        } catch {
-          // Sin localStorage (modo privado) el gating sigue funcionando
-          // con el probe; solo se pierde la hidratación instantánea.
-        }
-      })
-      .catch(() => {
-        // Probe caído: se conserva la caché si la hay. Sin caché el rol
-        // queda desconocido y el nav se queda en lo no gateado (overview).
-      });
+    const listener = () => setMode(current);
+    listeners.add(listener);
+    if (!fetchStarted) {
+      fetchStarted = true;
+      fetchMode();
+    }
+    // Por si otro consumidor ya completó el fetch antes del montaje.
+    setMode(current);
     return () => {
-      alive = false;
+      listeners.delete(listener);
     };
   }, []);
 
