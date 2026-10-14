@@ -95,7 +95,7 @@ export function BanipCard({ index = 0, onNavigate }: { index?: number; onNavigat
       iconTone={active ? "success" : "muted"}
       title={t("banip.cardTitle")}
       action={onNavigate && (
-        <Button variant="secondary" size="sm" onClick={() => onNavigate("banip")}>
+        <Button variant="secondary" size="sm" onClick={() => onNavigate("internet")}>
           {t("banip.cardManage")}
         </Button>
       )}

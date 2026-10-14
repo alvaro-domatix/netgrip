@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { Activity, ArrowLeftRight, Blocks, ChartColumn, ChartPie, Download, Forward, Globe, HardDrive, Info, LayoutDashboard, LogOut, Menu, Network, Radar, Server, Settings, ShieldBan, Smartphone, Wifi, Wrench } from "lucide-react";
+import { Activity, ArrowLeftRight, Blocks, ChartPie, Download, Globe, HardDrive, Info, LayoutDashboard, LogOut, Menu, Network, Radar, Server, Settings, Smartphone, Wifi } from "lucide-react";
 import { api, disableDemo, isDemo } from "../api";
 import type { Board, DDNSProbe, DriftProbe, EthPort, FwdProbe, GuestProbe, IoTProbe, IPv6Probe, MultiWanProbe, OVPNProbe, SelfUpdateCheck, SQMProbe, StorageProbe, SystemInfo, TSProbe, UsteerAP, UpdateCheck, WanStatus, WGProbe, WirelessRadio } from "../types";
 import { useHealthScore } from "../hooks/useHealthScore";
@@ -25,27 +25,22 @@ import { StoragePage } from "../pages/Storage";
 import { AboutPage } from "../pages/About";
 import { SelfUpdateDialog } from "../components/system/SelfUpdateDialog";
 
-export type Page = "overview" | "internet" | "wan" | "clients" | "coverage" | "wifi" | "lan" | "services" | "traffic" | "banip" | "ports" | "forwards" | "tools" | "diagnostics" | "fleet" | "storage" | "system" | "dpi" | "about";
+export type Page = "overview" | "internet" | "clients" | "coverage" | "wifi" | "lan" | "services" | "traffic" | "ports" | "diagnostics" | "fleet" | "storage" | "system" | "about";
 
 const NAV_ICONS: Record<Page, LucideIcon> = {
   overview: LayoutDashboard,
   internet: Globe,
-  wan: Globe,
   clients: Smartphone,
   coverage: Radar,
   wifi: Wifi,
   lan: Network,
   services: Blocks,
   traffic: ChartPie,
-  banip: ShieldBan,
   ports: ArrowLeftRight,
-  forwards: Forward,
-  tools: Wrench,
   diagnostics: Activity,
   storage: HardDrive,
   fleet: Server,
   system: Settings,
-  dpi: ChartColumn,
   about: Info,
 };
 
@@ -185,9 +180,9 @@ function ShellInner({ onLogout }: { onLogout: () => void }) {
   }, [usteerAps]);
   const visible = (id: Page) => {
     if (!modeReady) return id === "overview";
-    // La línea de salida y todo lo que cuelga de ella (reenvío de puertos,
-    // DPI, banIP) solo aplica a la puerta de enlace.
-    if ((id === "internet" || id === "wan" || id === "forwards" || id === "dpi" || id === "banip") && !isRouter) return false;
+    // La línea de salida (WAN, reenvío de puertos, DPI, banIP) se compone
+    // dentro de "internet" y solo aplica a la puerta de enlace.
+    if (id === "internet" && !isRouter) return false;
     // Red local (DHCP/DNS/reservas): sin dnsmasq la página quedaría vacía
     // (p. ej. un switch gestionado), así que la entrada no se ofrece.
     if (id === "lan" && !mode?.dnsmasq_on) return false;
@@ -267,10 +262,10 @@ function ShellInner({ onLogout }: { onLogout: () => void }) {
   // Bottom bar móvil §7.4: los 3-4 destinos más usados del modo actual + Menú.
   const bottomItems: Page[] = (
     isSwitch
-      ? (["overview", "ports", "tools"] as Page[])
+      ? (["overview", "ports", "diagnostics"] as Page[])
       : !isRouter
-        ? (["overview", "wifi", "ports", "tools"] as Page[])
-        : (["overview", "wifi", "traffic", "tools"] as Page[])
+        ? (["overview", "wifi", "ports", "diagnostics"] as Page[])
+        : (["overview", "wifi", "traffic", "diagnostics"] as Page[])
   ).filter(visible);
 
   const demo = isDemo();
