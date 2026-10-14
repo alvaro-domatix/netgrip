@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Radar } from "lucide-react";
 import { api } from "../../api";
+import { bandLabelKey } from "../../lib/bands";
 import type { WifiChanRadio } from "../../types";
 import { Button, Card, ConfirmDialog, Pill } from "../ui";
 
@@ -48,7 +49,7 @@ export function WifiChanCard({ index = 4 }: { index?: number }) {
       <div className="divide-y divide-border/60">
         {radios.map((rec) => {
           const sug = rec.suggestion;
-          const bandLabel = t(rec.band === "5g" ? "wifi.band5" : "wifi.band24");
+          const bandLabel = t(bandLabelKey(rec.band));
           const sameChannel = !sug || sug.channel === rec.channel;
           return (
             <div key={rec.radio} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">

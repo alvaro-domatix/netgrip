@@ -438,6 +438,7 @@ export default {
     title: "WiFi",
     band24: "2.4 GHz",
     band5: "5 GHz",
+    band6: "6 GHz",
     channel: "Channel",
     power: "TX power",
     radioTitle: "Radio settings",

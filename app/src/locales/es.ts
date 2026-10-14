@@ -438,6 +438,7 @@ export default {
     title: "Inalámbrica",
     band24: "2,4 GHz",
     band5: "5 GHz",
+    band6: "6 GHz",
     channel: "Canal",
     power: "Potencia",
     radioTitle: "Ajustes de la radio",
