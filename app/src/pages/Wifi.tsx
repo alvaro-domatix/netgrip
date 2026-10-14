@@ -9,6 +9,7 @@ import {
 } from "../components/ui";
 import { IlluWifiWaves } from "../components/ui/illustrations";
 import { QrBox, useWifiQr } from "../components/wifi/qr";
+import { bandLabelKey, type WifiBand } from "../lib/bands";
 import { WifiEditModal } from "../components/WifiEditModal";
 import { WifiRadioModal } from "../components/WifiRadioModal";
 import { GuestWifiCard } from "../components/GuestWifiCard";
@@ -41,7 +42,7 @@ export function WifiPage({ iot, onIotChange, guest, onGuestChange }: {
   const [blocked, setBlocked] = useState<BlockedClient[]>([]);
   const [meta, setMeta] = useState<Record<string, { name: string; device_type: string }>>({});
   const [qrOpen, setQrOpen] = useState<WifiUI | undefined>();
-  const [blockedOpen, setBlockedOpen] = useState<"2g" | "5g" | undefined>();
+  const [blockedOpen, setBlockedOpen] = useState<WifiBand | undefined>();
 
   const refreshBlocked = useCallback(async () => {
     try {
@@ -132,7 +133,7 @@ export function WifiPage({ iot, onIotChange, guest, onGuestChange }: {
                     onEdit={() => setEditing(rep)}
                     onRadio={(r) => setEditingRadio(r)}
                     onEnlargeQr={() => setQrOpen(rep)}
-                    onManageBlocked={() => setBlockedOpen(rep.band as "2g" | "5g")}
+                    onManageBlocked={() => setBlockedOpen(rep.band as WifiBand)}
                   />
                 );
               });
@@ -201,7 +202,7 @@ function RadioCard({ iface, group, radios, index, passkey, blocked, onEdit, onRa
   onManageBlocked: () => void;
 }) {
   const { t } = useTranslation();
-  const band = iface.band === "5g" ? "band5" : "band24";
+  const band = iface.band === "6g" ? "band6" : iface.band === "5g" ? "band5" : "band24";
   const groupBands = group.map((g) => g.band);
   const on = group.every((i) => !i.disabled);
   const clients = group.reduce((n, i) => n + (i.clients?.length ?? 0), 0);
@@ -231,7 +232,7 @@ function RadioCard({ iface, group, radios, index, passkey, blocked, onEdit, onRa
           <Pill tone={on ? "ok" : "muted"}>{on ? t("wifi.broadcasting") : t("wifi.bandOff")}</Pill>
           <span className="text-caption text-muted">
             {groupBands && groupBands.length > 1
-              ? groupBands.map((b) => t(b === "5g" ? "wifi.band5" : "wifi.band24")).join(" + ")
+              ? groupBands.map((b) => t(bandLabelKey(b))).join(" + ")
               : t(`wifi.${band}`)}
           </span>
         </span>
@@ -245,7 +246,7 @@ function RadioCard({ iface, group, radios, index, passkey, blocked, onEdit, onRa
               <div className="flex flex-col gap-1 text-small">
                 {group.map((g) => {
                   const r = radios.find((x) => x.name === g.radio);
-                  const bandName = t(g.band === "5g" ? "wifi.band5" : "wifi.band24");
+                  const bandName = t(bandLabelKey(g.band));
                   return (
                     <span key={g.section} className="text-muted">
                       <span className="font-medium text-text">{bandName}</span>
@@ -293,7 +294,7 @@ function RadioCard({ iface, group, radios, index, passkey, blocked, onEdit, onRa
             {group.map((g) => {
               const r = radios.find((x) => x.name === g.radio);
               if (!r) return null;
-              const bandName = t(g.band === "5g" ? "wifi.band5" : "wifi.band24");
+              const bandName = t(bandLabelKey(g.band));
               return (
                 <Button key={g.section} variant="secondary" size="sm" icon={Settings2} onClick={() => onRadio(r)}>
                   {group.length > 1 ? t("wifi.radioSettingsFor", { band: bandName }) : t("wifi.radioSettings")}
@@ -338,7 +339,7 @@ function RadioCard({ iface, group, radios, index, passkey, blocked, onEdit, onRa
 /* ══════════════ Modal de bloqueados por banda (#168) ══════════════ */
 
 function WifiBlockedModal({ band, blocked, meta, onUnblock, onClose }: {
-  band: "2g" | "5g" | undefined;
+  band: WifiBand | undefined;
   blocked: BlockedClient[];
   meta: Record<string, { name: string; device_type: string }>;
   onUnblock: (mac: string, band?: string) => Promise<void> | void;
@@ -346,7 +347,7 @@ function WifiBlockedModal({ band, blocked, meta, onUnblock, onClose }: {
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState<string>();
-  const bandLabel = band ? t(band === "5g" ? "wifi.band5" : "wifi.band24") : "";
+  const bandLabel = band ? t(bandLabelKey(band)) : "";
   const nameFor = (mac: string) => meta[mac]?.name;
 
   const doUnblock = async (mac: string, bandScope?: string) => {
@@ -376,7 +377,7 @@ function WifiBlockedModal({ band, blocked, meta, onUnblock, onClose }: {
                   <p className="truncate text-small font-medium">{name ?? <span className="font-mono">{b.mac}</span>}</p>
                   <div className="flex flex-wrap gap-1 mt-0.5">
                     {(b.bands ?? []).map((x) => (
-                      <Pill key={x} tone={x === band ? "warn" : "muted"}>{t(x === "5g" ? "wifi.band5" : "wifi.band24")}</Pill>
+                      <Pill key={x} tone={x === band ? "warn" : "muted"}>{t(bandLabelKey(x))}</Pill>
                     ))}
                   </div>
                 </div>

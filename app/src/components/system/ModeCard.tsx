@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Radio, Router } from "lucide-react";
 import { api } from "../../api";
-import type { ModeProbe, UsteerAP } from "../../types";
+import type { UsteerAP } from "../../types";
+import { refreshMode, useMode } from "../../hooks/useMode";
 import { ActionBanner, Card, ConfirmDialog, Pill, SegmentedControl, SkeletonRows, useToast } from "../ui";
 import { useActionCycle } from "../wifi/action";
 
@@ -11,15 +12,11 @@ type Mode = "router" | "ap";
 export function ModeCard({ index = 0 }: { index?: number }) {
   const { t } = useTranslation();
   const { push } = useToast();
-  const [mode, setMode] = useState<ModeProbe>();
+  const { mode } = useMode();
   const [confirmTarget, setConfirmTarget] = useState<Mode>();
   const [usteerAps, setUsteerAps] = useState<UsteerAP[]>();
   const [usteerError, setUsteerError] = useState(false);
   const { phase, detail, busy, run, clear } = useActionCycle();
-
-  useEffect(() => {
-    api.mode().then(setMode).catch(() => {});
-  }, []);
 
   useEffect(() => {
     api.usteer().then((r) => { setUsteerAps(r.aps); setUsteerError(false); }).catch(() => setUsteerError(true));
@@ -29,7 +26,9 @@ export function ModeCard({ index = 0 }: { index?: number }) {
     setConfirmTarget(undefined);
     run(() => api.setMode(target)).then((res) => {
       if (res?.status === "applied") {
-        setMode(res.state);
+        // Invalida la caché del rol: el nav y las vistas gateadas se
+        // actualizan solas con el refetch, sin recargar la página.
+        refreshMode();
         push({ tone: "ok", text: t(target === "ap" ? "mode.changedToastAp" : "mode.changedToastRouter") });
       }
     });

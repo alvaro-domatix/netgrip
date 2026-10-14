@@ -145,6 +145,42 @@ export interface MDNSProbe {
   domain: string;
 }
 
+/** Vecino descubierto por lldpd (LLDP/CDP), visto por una boca local. */
+export interface LldpNeighbor {
+  interface: string;
+  protocol: string;
+  chassis_id: string;
+  chassis_name: string;
+  sys_descr?: string;
+  mgmt_ip?: string;
+  port_id: string;
+  port_descr?: string;
+  ttl?: string;
+}
+
+export interface LldpProbe {
+  installed: boolean;
+  enabled: boolean;
+  running: boolean;
+  tx_enabled: boolean;
+  neighbors: LldpNeighbor[];
+}
+
+/** Entrada de la tabla MAC dinamica (FDB) del bridge LAN. */
+export interface FdbEntry {
+  port: string;
+  mac: string;
+  local: boolean;
+  ageing: string;
+}
+
+export interface FdbProbe {
+  applicable: boolean;
+  bridge: string;
+  entries: FdbEntry[];
+}
+
+
 export interface SQMProbe {
   installed: boolean;
   has_wan: boolean;

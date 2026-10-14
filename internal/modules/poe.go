@@ -1,8 +1,10 @@
 package modules
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -111,9 +113,21 @@ type PoESchedule struct {
 	OffTime string `json:"off_time"`
 }
 
+// rePoETime: lo que envía la UI (input type="time"), "HH:MM" 00:00-23:59.
+var rePoETime = regexp.MustCompile(`^([01]\d|2[0-3]):[0-5]\d$`)
+
 func SetPoESchedule(sched PoESchedule) (*PoEProbe, error) {
 	if sched.Port == "" {
 		return nil, nil
+	}
+	if !bridgePorts()[sched.Port] {
+		return nil, fmt.Errorf("unknown bridge port %q", sched.Port)
+	}
+	if sched.OnTime != "" && !rePoETime.MatchString(sched.OnTime) {
+		return nil, fmt.Errorf("invalid on_time %q (want HH:MM)", sched.OnTime)
+	}
+	if sched.OffTime != "" && !rePoETime.MatchString(sched.OffTime) {
+		return nil, fmt.Errorf("invalid off_time %q (want HH:MM)", sched.OffTime)
 	}
 	key := "netgrip.poe." + sanitizeUCIKey(sched.Port)
 	_ = EnsureNetgripSection("poe", "poe")
@@ -138,14 +152,24 @@ func SetPoESchedule(sched PoESchedule) (*PoEProbe, error) {
 
 func applyPoESchedule(sched PoESchedule) {
 	if sched.OnTime != "" {
-		cronLine := sched.OnTime + " /bin/sh -c 'echo enable > /sys/class/net/" + sched.Port + "/device/of_node/poe/status 2>/dev/null || poe-util enable " + sched.Port + " 2>/dev/null'"
+		cronLine := poeCronSchedule(sched.OnTime) + " /bin/sh -c 'echo enable > /sys/class/net/" + sched.Port + "/device/of_node/poe/status 2>/dev/null || poe-util enable " + sched.Port + " 2>/dev/null'"
 		writeCronEntry("netgrip-poe-on-"+sanitizeUCIKey(sched.Port), cronLine)
 	}
 	if sched.OffTime != "" {
-		cronLine := sched.OffTime + " /bin/sh -c 'echo disable > /sys/class/net/" + sched.Port + "/device/of_node/poe/status 2>/dev/null || poe-util disable " + sched.Port + " 2>/dev/null'"
+		cronLine := poeCronSchedule(sched.OffTime) + " /bin/sh -c 'echo disable > /sys/class/net/" + sched.Port + "/device/of_node/poe/status 2>/dev/null || poe-util disable " + sched.Port + " 2>/dev/null'"
 		writeCronEntry("netgrip-poe-off-"+sanitizeUCIKey(sched.Port), cronLine)
 	}
 	exec.Command("/etc/init.d/cron", "restart").Run()
+}
+
+// poeCronSchedule convierte el "HH:MM" de la UI a los cinco campos cron.
+// Antes se interpolaba tal cual ("08:00 /bin/sh ...") y crond descartaba la
+// línea: los horarios nunca se ejecutaban.
+func poeCronSchedule(hhmm string) string {
+	parts := strings.SplitN(hhmm, ":", 2)
+	h, _ := strconv.Atoi(parts[0])
+	m, _ := strconv.Atoi(parts[1])
+	return fmt.Sprintf("%d %d * * *", m, h)
 }
 
 func writeCronEntry(name, line string) {

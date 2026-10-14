@@ -3,6 +3,7 @@ import { Wifi } from "lucide-react";
 import type { WirelessRadio } from "../../types";
 import { Card, Pill, SkeletonRows } from "../ui";
 import { oneLine } from "./cards";
+import { bandLabelKey } from "../../lib/bands";
 
 /**
  * Wi-Fi del Resumen en modo AP (#487, mockup de rediseño): lo que gestiona
@@ -21,7 +22,7 @@ export function WifiStatusCard({ wireless, onNavigate, index = 3 }: {
   const ifaces = radios.flatMap((r) => r.interfaces).filter((i) => !i.disabled);
   const ssids = [...new Set(ifaces.map((i) => i.ssid))];
   const clients = ifaces.reduce((n, i) => n + (i.clients?.length ?? 0), 0);
-  const bands = [...new Set(radios.map((r) => t(r.band === "5g" ? "wifi.band5" : "wifi.band24")))];
+  const bands = [...new Set(radios.map((r) => t(bandLabelKey(r.band))))];
   const emitting = radios.length > 0 && ifaces.length > 0;
 
   return (

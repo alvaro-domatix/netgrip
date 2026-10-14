@@ -54,8 +54,20 @@ func SetMACACL(req MACACLSetRequest) error {
 	if req.Port == "" {
 		return fmt.Errorf("port required")
 	}
+	if !bridgePorts()[req.Port] {
+		return fmt.Errorf("unknown bridge port %q", req.Port)
+	}
 	if req.Mode != "off" && req.Mode != "allow" && req.Mode != "deny" {
 		return fmt.Errorf("mode must be off, allow or deny")
+	}
+	for _, m := range req.MACs {
+		m = strings.TrimSpace(m)
+		if m == "" {
+			continue
+		}
+		if !reMac.MatchString(m) {
+			return fmt.Errorf("invalid MAC %q", m)
+		}
 	}
 
 	acls := loadMACACLs()

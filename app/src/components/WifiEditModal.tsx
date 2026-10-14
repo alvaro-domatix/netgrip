@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EyeOff, KeyRound, Link2, RadioTower, Shuffle, Wifi } from "lucide-react";
 import { api } from "../api";
+import { bandLabelKey } from "../lib/bands";
 import type { WifiUI } from "../types";
 import {
   ActionBanner, Banner, Button, Field, Input, Modal, Pill, SegmentedControl, SettingRow,
@@ -56,7 +57,7 @@ export function WifiEditModal({ iface, group, main, onClose, onSaved }: {
   // tiene varias radios).
   const target = unify ? (group.length > 1 ? group : main) : [iface];
   const perBand = !unify && group.length > 1;
-  const bandName = (b: string) => (b === "5g" ? t("wifi.band5") : t("wifi.band24"));
+  const bandName = (b: string) => t(bandLabelKey(b));
   const bands = [...new Set(target.map((i) => bandName(i.band)))];
   const bandLabel = bands.join(" + ");
   const keyError = key.length > 0 && key.length < 8 ? t("wifi.keyMin") : undefined;

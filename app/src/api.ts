@@ -53,18 +53,29 @@ export interface InstallJob {
 }
 
 /**
- * Modo demo §9: activo con `?demo=1` en la URL, localStorage
- * "netgrip:demo"="1" o build con VITE_DEMO=1. Cuando está activo, cada
- * método de `api` delega en `src/demo` (escenario García).
+ * Modo demo §9: activo con `?demo=1` en la URL (también `?demo=ap` o
+ * `?demo=switch` para fotografiar los otros roles), localStorage
+ * "netgrip:demo" o build con VITE_DEMO=1. Cuando está activo, cada método
+ * de `api` delega en `src/demo`.
  */
+export function demoScenario(): "gateway" | "ap" | "switch" {
+  try {
+    const v = localStorage.getItem("netgrip:demo");
+    if (v === "ap" || v === "switch") return v;
+  } catch { /* sin persistencia */ }
+  return "gateway";
+}
+
 export function isDemo(): boolean {
   try {
     if (import.meta.env.VITE_DEMO === "1") return true;
-    if (new URLSearchParams(window.location.search).get("demo") === "1") {
-      localStorage.setItem("netgrip:demo", "1");
+    const v = new URLSearchParams(window.location.search).get("demo");
+    if (v === "1" || v === "ap" || v === "switch") {
+      localStorage.setItem("netgrip:demo", v);
       return true;
     }
-    return localStorage.getItem("netgrip:demo") === "1";
+    const stored = localStorage.getItem("netgrip:demo");
+    return stored === "1" || stored === "ap" || stored === "switch";
   } catch {
     return false;
   }
@@ -247,6 +258,14 @@ const realApi = {
   mdns: () => request<import("./types").MDNSProbe>("/api/mdns"),
   setMdns: (enabled: boolean) =>
     request<import("./types").ModuleResult<import("./types").MDNSProbe>>("/api/mdns", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    }),
+  lldp: () => request<import("./types").LldpProbe>("/api/lldp"),
+  fdb: () => request<import("./types").FdbProbe>("/api/fdb"),
+  setLldp: (enabled: boolean) =>
+    request<import("./types").ModuleResult<import("./types").LldpProbe>>("/api/lldp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled }),

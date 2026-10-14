@@ -2,6 +2,7 @@ package modules
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -143,10 +144,18 @@ func probeStorageService(name string) StorageService {
 	return svc
 }
 
+// storageServiceNames: servicios que la UI puede ofrecer (los mismos que
+// sonda ProbeStorage). Cualquier otro nombre se rechaza: el valor se usa
+// para construir la ruta del init script.
+var storageServiceNames = map[string]bool{"samba4": true, "minidlna": true, "nfs": true}
+
 func SetStorageService(name string, action string) error {
 	InvalidateKey("storage")
 	if action != "enable" && action != "disable" {
 		return nil
+	}
+	if !storageServiceNames[name] {
+		return fmt.Errorf("unknown storage service %q", name)
 	}
 
 	initPath := "/etc/init.d/" + name

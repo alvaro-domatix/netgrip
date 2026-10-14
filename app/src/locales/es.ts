@@ -146,6 +146,15 @@ export default {
     },
   },
   help: {
+    lldp: {
+      title: "Vecinos LLDP",
+      body: "Muestra qué equipo hay al otro lado de cada cable, tal como se anuncian los propios equipos (LLDP/CDP). Necesita el paquete lldpd, que se instala bajo demanda.",
+    },
+    fdb: {
+      title: "Tabla MAC",
+      body: "Las MAC que el switch ha aprendido en cada boca y hace cuánto las vio por última vez. Vista de solo lectura de la base de datos de reenvío del bridge.",
+    },
+
     login: {
       title: "¿Qué contraseña es?",
       body: "La contraseña de administrador del router: la misma que usarías para entrar en LuCI. NetGrip no guarda usuarios propios; valida directamente contra el router.",
@@ -438,6 +447,7 @@ export default {
     title: "Inalámbrica",
     band24: "2,4 GHz",
     band5: "5 GHz",
+    band6: "6 GHz",
     channel: "Canal",
     power: "Potencia",
     radioTitle: "Ajustes de la radio",
@@ -1381,6 +1391,26 @@ export default {
     stations_one: "{{count}} dispositivo",
     stations_other: "{{count}} dispositivos",
   },
+  lldp: {
+    title: "Vecinos LLDP",
+    notInstalled: "El descubrimiento de vecinos necesita el paquete lldpd. Instálalo para ver qué equipo hay al otro lado de cada boca.",
+    install: "Instalar lldpd",
+    daemon: "Descubrimiento de vecinos (lldpd)",
+    running: "en marcha",
+    stopped: "parado",
+    stoppedHint: "Arranca el descubrimiento para ver vecinos.",
+    empty: "Aún no hay vecinos. Aparecen cuando los equipos conectados se anuncian.",
+    onPort: "en {{port}}",
+    theirPort: "su boca {{port}}",
+    },
+  fdb: {
+    title: "Tabla MAC",
+    filterPlaceholder: "Filtra MAC o boca",
+    empty: "Aún no hay MACs aprendidas.",
+    emptyFilter: "Nada coincide con ese filtro.",
+    summary: "{{count}} MACs en {{ports}} bocas (bridge {{bridge}})",
+    local: "local",
+    },
   ports: {
     title: "Puertos ethernet",
     tabsAria: "Secciones de Puertos y VLANs",
@@ -1392,6 +1422,7 @@ export default {
       traffic: "Tráfico",
       optics: "Ópticas",
       profiles: "Perfiles y seguridad",
+      neighbors: "Vecinos",
     },
     empty: "Sin puertos físicos detectados",
     up: "enlace",

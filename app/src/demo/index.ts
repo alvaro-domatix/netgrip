@@ -1,5 +1,6 @@
 import type * as T from "../types";
 import type { api } from "../api";
+import { demoScenario } from "../api";
 import * as D from "./data";
 
 /**
@@ -17,6 +18,11 @@ const write = async <V>(state: V): Promise<T.ModuleResult<V>> => {
   return { status: "applied", rolled_back: false, state };
 };
 
+// Escenario por rol (?demo=ap / ?demo=switch): el gateway es el escenario
+// García histórico; AP y switch reutilizan sus fixtures cambiando el rol,
+// las bocas y lo inalámbrico.
+const scenario = demoScenario();
+
 // ── Estado mutable del escenario ──────────────────────────────────────────
 const state = {
   clients: structuredClone(D.demoClients),
@@ -27,6 +33,8 @@ const state = {
   wg: structuredClone(D.demoWg),
   ddns: { ...D.demoDdns },
   mdns: { ...D.demoMdns },
+  lldp: structuredClone(D.demoLldp),
+  fdb: structuredClone(D.demoFdb),
   sqm: { ...D.demoSqm },
   ovpn: structuredClone(D.demoOvpn),
   ipv6: { ...D.demoIpv6 },
@@ -92,6 +100,23 @@ const state = {
   history: D.buildDemoHistory(),
   netifyd: { ...D.demoNetifyd },
 };
+
+if (scenario === "ap") {
+  state.mode = { ...D.demoModeAp };
+  state.lldp = structuredClone(D.demoLldp);
+} else if (scenario === "switch") {
+  state.mode = { ...D.demoModeSwitch };
+  state.wireless = [];
+  state.wifi = [];
+  state.lldp = structuredClone(D.demoLldpSwitch);
+  state.fdb = structuredClone(D.demoFdbSwitch);
+}
+
+const demoEthPortsFor = scenario === "ap"
+  ? D.demoEthPortsAp
+  : scenario === "switch"
+    ? D.demoEthPortsSwitch
+    : D.demoEthPorts;
 
 // ── Contadores de tráfico que evolucionan con ruido suave acotado ─────────
 const rates: Record<string, { rx: number; tx: number }> = {
@@ -305,6 +330,13 @@ export const demoApi: typeof api = {
   setMdns: async (enabled) => {
     state.mdns.enabled = state.mdns.running = enabled;
     return write(state.mdns);
+  },
+  lldp: () => get(state.lldp),
+  fdb: () => get(state.fdb),
+  setLldp: async (enabled) => {
+    state.lldp.installed = true;
+    state.lldp.enabled = state.lldp.running = state.lldp.tx_enabled = enabled;
+    return write(state.lldp);
   },
   sqm: () => get(state.sqm),
   setSqm: async (cfg) => {
@@ -562,7 +594,7 @@ export const demoApi: typeof api = {
   },
 
   // puertos
-  ethports: () => get({ ports: D.demoEthPorts }),
+  ethports: () => get({ ports: demoEthPortsFor }),
   multiwan: () => get(state.mwan),
   setMultiwan: async (req) => {
     const m = state.mwan;

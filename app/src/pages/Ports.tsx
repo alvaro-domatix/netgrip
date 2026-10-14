@@ -14,6 +14,8 @@ import { SwitchModesCard } from "../components/ports/SwitchModesCard";
 import { IgmpCard, MacAclCard, StormControlCard } from "../components/tools/advanced";
 import { MirrorCard, RateLimitCard } from "../components/ports/TrafficCards";
 import { PortIsolationCard, PortSecurityCard } from "../components/ports/SecurityCards";
+import { LldpCard } from "../components/ports/LldpCard";
+import { MacTableCard } from "../components/ports/MacTableCard";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 
 /**
@@ -37,7 +39,7 @@ import { SegmentedControl } from "../components/ui/SegmentedControl";
  * contenido vacío.
  */
 
-type PortsTab = "ports" | "vlans" | "lag" | "stp" | "traffic" | "optics" | "profiles";
+type PortsTab = "ports" | "neighbors" | "vlans" | "lag" | "stp" | "traffic" | "optics" | "profiles";
 
 export function Ports({ ethports }: { ethports?: EthPort[] }) {
   const { t } = useTranslation();
@@ -72,6 +74,9 @@ export function Ports({ ethports }: { ethports?: EthPort[] }) {
 
   const options = [
     { value: "ports" as PortsTab, label: t("ports.tab.ports") },
+    // Vecinos (LLDP + tabla MAC): siempre ofrecida; las tarjetas enseñan el
+    // estado honesto (instalar lldpd, bridge inexistente) en vez de gatear.
+    { value: "neighbors" as PortsTab, label: t("ports.tab.neighbors") },
     ...(vlansOk !== false ? [{ value: "vlans" as PortsTab, label: t("ports.tab.vlans") }] : []),
     ...(lagOk !== false ? [{ value: "lag" as PortsTab, label: t("ports.tab.lag") }] : []),
     ...(stpOk !== false
@@ -108,6 +113,13 @@ export function Ports({ ethports }: { ethports?: EthPort[] }) {
       )}
 
       {active === "vlans" && <VLANTable />}
+
+      {active === "neighbors" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-[var(--card-gap)]">
+          <LldpCard index={0} />
+          <MacTableCard index={1} />
+        </div>
+      )}
 
       {active === "lag" && <LagCard index={0} />}
 
