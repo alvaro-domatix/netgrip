@@ -2,7 +2,16 @@
 
 ## Status
 
-accepted
+superseded (2026-10-12, #503) — see below
+
+## Superseded
+
+The advanced-mode gate was removed in #503 ("Advanced mode removed (toggle,
+endpoint, flag, endpoint gate); ports tabs follow capability probes alone.
+SNMP card removed"). What replaced it: feature visibility is driven by
+capability probes (a tab/card appears only when the hardware and packages
+support it) and by the device role (#447, #484), with no global opt-in flag.
+The `netgrip.main.advanced` UCI key no longer exists in the codebase.
 
 ## Context
 
@@ -11,7 +20,7 @@ and later SNMP and switch features) can lock a user out of their network if
 misused. Scattering them among everyday settings (or hiding them in drawers)
 both overserves beginners and underserves experts.
 
-## Decision
+## Decision (historical, no longer in effect)
 
 - A UCI flag (`netgrip.main.advanced`) is the single source of truth,
   writable from Settings through the executor, with an explicit risk

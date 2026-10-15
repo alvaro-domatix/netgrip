@@ -2,7 +2,6 @@
 
 Plan: plans/backend-seam-clients/plan.md (#462, ListClients behind the seam)
 
-- [ ] Phase 1: ubus reads via the seam (phases/phase-1.md)
 - [x] Phase 1: ubus reads via the seam (phases/phase-1.md) - PR #478
 - [x] Phase 2: uci exec seam (phases/phase-2.md) - PR #479 (gateway SSH pulled forward)
 - [x] Phase 3: file/exec path seams (phases/phase-3.md) - PR #480

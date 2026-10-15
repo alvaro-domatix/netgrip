@@ -148,7 +148,8 @@ El endpoint nunca acepta la cookie de sesión del navegador, responde 404
 mientras está desactivado y tiene rate limit por IP (60 peticiones/minuto
 por defecto, ajustable con `uci set netgrip.mcp.rate_per_min=<n>`). Los
 tools (`server_status`, `list_clients`, `wireless_status`, `wan_status`,
-`multiwan_status`, `list_leases`, `list_devices`) leen las mismas sondas y
+`multiwan_status`, `list_leases`, `list_devices`, `channel_recommendation`,
+`wifi_schedule_status`, `snmp_status`) leen las mismas sondas y
 cachés que el panel, y cada llamada queda en el log.
 
 ## Ponlo en tu router

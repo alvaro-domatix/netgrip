@@ -98,8 +98,8 @@ const I18N = {
     "feat.f14.d": "banIP integrado: feeds de listas negras, listas locales y un monitor que bloquea lo que insiste, con aviso cuando la RAM aprieta.",
     "feat.f15.t": "Tu router, hablando con asistentes de IA",
     "feat.f15.d": "Endpoint MCP con 10 herramientas de solo lectura (estado, clientes, WiFi, WAN, SNMP) para que un asistente lea tu router en nuestro vocabulario. Desactivado por defecto, con token propio.",
-    "feat.f16.t": "Modo avanzado opt-in",
-    "feat.f16.d": "VLANs, SNMP, storm control y ACLs de MAC tras un check en Ajustes: potencia real fuera de vista hasta que la pides, y un menú que solo muestra lo que tu equipo tiene.",
+    "feat.f16.t": "Solo lo que tu equipo tiene",
+    "feat.f16.d": "VLANs, storm control, LAG, espejo de bocas y ACLs de MAC aparecen solo cuando tu hardware los soporta, y la interfaz entera cambia según el rol del equipo: router, punto de acceso o switch.",
     "feat.f17.t": "WiFi que se ajusta solo",
     "feat.f17.d": "Canal recomendado a partir de la utilización real del aire, aplicable en un clic, y horarios semanales por red: la de invitados, fuera de madrugada.",
 
@@ -224,8 +224,8 @@ const I18N = {
     "feat.f14.d": "banIP built in: blocklist feeds, local allow/block lists and a monitor that blocks persistent abusers, with a heads-up when RAM runs short.",
     "feat.f15.t": "Your router, talking to AI assistants",
     "feat.f15.d": "An MCP endpoint with 10 read-only tools (status, clients, Wi-Fi, WAN, SNMP) so an assistant can read your router in our vocabulary. Off by default, with its own token.",
-    "feat.f16.t": "Opt-in advanced mode",
-    "feat.f16.d": "VLANs, SNMP, storm control and MAC ACLs behind one settings toggle: real power out of sight until you ask, and a menu that only shows what your device has.",
+    "feat.f16.t": "Only what your device has",
+    "feat.f16.d": "VLANs, storm control, LAG, port mirroring and MAC ACLs appear only when your hardware supports them, and the whole interface follows the device role: router, access point or switch.",
     "feat.f17.t": "Wi-Fi that tunes itself",
     "feat.f17.d": "A channel recommendation built on real airtime utilization, one click to apply, plus weekly per-network schedules: the guest network, off at 3 am.",
 

@@ -2,7 +2,7 @@
 type: planning
 entity: todo
 plan: "advanced-section"
-updated: "2026-10-06"
+updated: "2026-10-14"
 ---
 
 # Todo: advanced-section
@@ -33,3 +33,7 @@ updated: "2026-10-06"
 
 - Plan created with maintainer decisions (UCI flag + toggle, grouping, snmpd, DSA, UniFi style, 3 phases). Phase 1 populated.
 - Phase 1 implementation on `feat/441-advanced-mode` (worktree `~/temp/opencode-work/netgrip-441`), 2 commits: framework + moves. Nota del mantenedor aplicada: reagrupar lo existente, no duplicar. Preview rt-lab `0.72.99-adv441c` con flag ON.
+
+## Changelog
+
+- 2026-10-14: closed as superseded — the advanced-mode gate was removed in #503; its features live ungated behind capability probes in the ports page, and the SNMP card was removed. See docs/ADR/004-advanced-mode.md (superseded).

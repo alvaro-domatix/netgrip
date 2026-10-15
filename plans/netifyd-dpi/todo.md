@@ -2,7 +2,7 @@
 type: planning
 entity: todo
 plan: netifyd-dpi
-updated: 2026-09-02
+updated: "2026-10-14"
 ---
 
 # Todo: netifyd-dpi
@@ -46,3 +46,7 @@ updated: 2026-09-02
 
 - Plan created.
 - User feedback integrated: DPI/Traffic menu item must not show a numeric badge.
+
+## Changelog
+
+- 2026-10-14: implemented (internal/modules/netifyd.go + netifyd_socket.go, Dpi.tsx with toggle, timeline chart and apps table; tests netifyd_test.go / netifyd_socket_test.go).
