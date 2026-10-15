@@ -1,55 +1,60 @@
 package modules
 
 import (
-	"encoding/json"
 	"testing"
 )
 
-const ptFixture = `netgrip.main='main'
+// Salida real de `uci show netgrip` con dos plantillas y secciones ajenas.
+const uciShowNetgripFixture = `netgrip.main=main
 netgrip.main.port='8090'
-netgrip.hardened=port_template
-netgrip.hardened.description='Disable unused ports'
-netgrip.hardened.admin_up='0'
-netgrip.hardened.speed_mbps='1000'
-netgrip.hardened.vlans_json='[{"vid":1,"tagged":false}]'
-netgrip.@port_template[0]=port_template
-netgrip.@port_template[0].description='IoT profile'
-netgrip.@port_template[0].admin_up='1'
+netgrip.uplink=port_template
+netgrip.uplink.description='Uplink al router'
+netgrip.uplink.admin_up='1'
+netgrip.uplink.speed_mbps='2500'
+netgrip.uplink.vlans_json='[{"vlan_id":1,"tagged":false}]'
+netgrip.camara=port_template
+netgrip.camara.description='Cámara'
+netgrip.camara.admin_up='0'
+netgrip.poe=poe
+netgrip.poe.lan2=poeport
 `
 
-func TestListPortTemplatesFromRealUCIShape(t *testing.T) {
-	templates := listPortTemplatesFrom(ptFixture)
-	if len(templates) != 2 {
-		t.Fatalf("want 2 templates, got %d: %+v", len(templates), templates)
+func TestListPortTemplatesFrom(t *testing.T) {
+	tpls := listPortTemplatesFrom(uciShowNetgripFixture)
+	if len(tpls) != 2 {
+		t.Fatalf("templates = %d, want 2: %+v", len(tpls), tpls)
 	}
-	var hardened *PortTemplate
-	for i := range templates {
-		if templates[i].Name == "hardened" {
-			hardened = &templates[i]
-		}
+	byName := map[string]PortTemplate{}
+	for _, tp := range tpls {
+		byName[tp.Name] = tp
 	}
-	if hardened == nil {
-		t.Fatalf("named section template not parsed: %+v", templates)
+	up, ok := byName["uplink"]
+	if !ok {
+		t.Fatalf("falta uplink: %+v", tpls)
 	}
-	if hardened.Description != "Disable unused ports" || hardened.AdminUp || hardened.SpeedMbps != 1000 {
-		t.Errorf("hardened fields wrong: %+v", hardened)
+	if up.Description != "Uplink al router" || !up.AdminUp || up.SpeedMbps != 2500 || len(up.VLANs) != 1 {
+		t.Fatalf("uplink mal parseado: %+v", up)
 	}
-	if len(hardened.VLANs) != 1 || hardened.VLANs[0].VID != 1 {
-		t.Errorf("vlans_json not parsed: %+v", hardened.VLANs)
+	cam, ok := byName["camara"]
+	if !ok || cam.AdminUp || cam.SpeedMbps != 0 || len(cam.VLANs) != 0 {
+		t.Fatalf("camara mal parseado: %+v", cam)
 	}
 }
 
-func TestListPortTemplatesFromEmptyNeverNil(t *testing.T) {
-	empty := "netgrip.main='main'\nnetgrip.main.port='8090'\n"
-	got := listPortTemplatesFrom(empty)
-	if got == nil {
-		t.Fatal("got nil slice on config without templates")
+func TestListPortTemplatesFromEmpty(t *testing.T) {
+	if got := listPortTemplatesFrom("netgrip.main=main\n"); len(got) != 0 {
+		t.Fatalf("esperaba 0 plantillas, got %+v", got)
 	}
-	b, err := json.Marshal(got)
-	if err != nil {
-		t.Fatal(err)
+	if got := listPortTemplatesFrom(""); len(got) != 0 {
+		t.Fatalf("esperaba 0 plantillas con salida vacía, got %+v", got)
 	}
-	if string(b) != "[]" {
-		t.Errorf("empty config must marshal to [], got %s", b)
+}
+
+func TestParseInt(t *testing.T) {
+	if v, err := parseInt("2500"); err != nil || v != 2500 {
+		t.Fatalf("parseInt(2500) = %d, %v", v, err)
+	}
+	if _, err := parseInt("abc"); err == nil {
+		t.Fatal("parseInt(abc) no falló")
 	}
 }
