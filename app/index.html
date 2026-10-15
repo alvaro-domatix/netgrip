@@ -18,7 +18,7 @@
           // theme: the static attribute is only the fallback, and the
           // browser may read it before i18next starts. Same detection as
           // i18n.ts: what was chosen, else the browser's.
-          var l = localStorage.getItem("netgrip-lang") || navigator.language || "";
+          var l = localStorage.getItem("netgrip:lang") || localStorage.getItem("netgrip-lang") || navigator.language || "";
           document.documentElement.lang = l.slice(0, 2).toLowerCase() === "es" ? "es" : "en";
         } catch (e) { /* sin tema */ }
       })();

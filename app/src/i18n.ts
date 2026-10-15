@@ -3,7 +3,25 @@ import { initReactI18next } from "react-i18next";
 import es from "./locales/es";
 import en from "./locales/en";
 
-const stored = localStorage.getItem("netgrip-lang");
+const stored = (() => {
+  // Una sola clave para la ELECCIÓN del usuario: netgrip:lang (es/en/auto).
+  // Migración desde la clave antigua (netgrip-lang, que guardaba el idioma
+  // resuelto): se adopta su valor y se borra. Guardar el resuelto rompía el
+  // modo "auto", que debe seguir al navegador en cada carga.
+  try {
+    const cur = localStorage.getItem("netgrip:lang");
+    if (cur === "es" || cur === "en") return cur;
+    const old = localStorage.getItem("netgrip-lang");
+    if (old === "es" || old === "en") {
+      localStorage.setItem("netgrip:lang", old);
+      localStorage.removeItem("netgrip-lang");
+      return old;
+    }
+  } catch {
+    // Sin localStorage (modo privado): se usa el navegador.
+  }
+  return undefined;
+})();
 const browser = navigator.language.startsWith("es") ? "es" : "en";
 
 i18n.use(initReactI18next).init({
@@ -25,7 +43,9 @@ const applyDocLang = (lng?: string) => {
 applyDocLang();
 
 i18n.on("languageChanged", (lng) => {
-  localStorage.setItem("netgrip-lang", lng);
+  // La persistencia de la elección la escribe useLang (netgrip:lang);
+  // aquí NO se escribe el idioma resuelto: convertiría "auto" en un
+  // idioma fijo y el navegador dejaría de mandar en la siguiente carga.
   applyDocLang(lng);
 });
 
