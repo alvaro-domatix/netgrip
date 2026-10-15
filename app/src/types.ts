@@ -47,13 +47,6 @@ export interface WirelessRadio {
   interfaces: WirelessInterface[];
 }
 
-export interface Lease {
-  expires: string;
-  mac: string;
-  ip: string;
-  hostname: string;
-}
-
 export interface IPv6Probe {
   state: "enabled" | "disabled" | "partial";
   lan_ipv6: string;

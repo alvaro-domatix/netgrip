@@ -1376,7 +1376,6 @@ export default {
     title: "Wireless coverage",
     absent: "usteer is not collecting data from other access points.",
     empty: "No other access points nearby.",
-    nodes: "Access points",
     stations: "Devices",
     util: "Load",
     this: "This",

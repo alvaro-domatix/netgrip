@@ -182,7 +182,6 @@ export const demoApi: typeof api = {
   },
   setWanConfig: async (cfg) => { await wait(300, 600); return cfg; },
   wireless: () => get(state.wireless),
-  leases: () => get(D.demoLeases),
   clients: async () => { await wait(150, 400); return nextClients(); },
   blockedClients: async () => {
     await wait(80, 200);
@@ -230,7 +229,6 @@ export const demoApi: typeof api = {
     if (c) { if (name) c.name = name; c.device_type = device_type; }
     return { meta: { [mac]: { name, device_type } } };
   },
-  wakeOnLan: async () => { await wait(400, 900); return { status: "ok" }; },
   netdev: async () => { await wait(150, 400); return nextNetdev(); },
   history: () => get({ entries: state.history }),
   mode: () => get(state.mode),

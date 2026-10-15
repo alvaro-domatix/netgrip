@@ -126,7 +126,6 @@ const realApi = {
       body: JSON.stringify(cfg),
     }),
   wireless: () => request<import("./types").WirelessRadio[]>("/api/wireless"),
-  leases: () => request<import("./types").Lease[]>("/api/leases"),
   clients: () => request<{ clients: import("./types").Client[]; bands: string[]; ts: number }>("/api/clients"),
   blockedClients: () => request<{ blocked: import("./types").BlockedClient[]; ts: number }>("/api/clients/blocked"),
   reserveClient: (mac: string, ip: string, reserved: boolean) =>
@@ -612,12 +611,6 @@ const realApi = {
     request<{ status: string; https: boolean; restarting: boolean }>("/api/https", {
       method: "POST",
       body: JSON.stringify({ enabled, cert }),
-    }),
-  wakeOnLan: (mac: string) =>
-    request<{ status: string }>("/api/wol", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mac }),
     }),
   telegramGet: () =>
     request<{ botToken: string; chatId: string; enabled: boolean }>("/api/telegram"),

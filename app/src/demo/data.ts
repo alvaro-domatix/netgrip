@@ -83,10 +83,6 @@ export const demoQuotas: T.QuotaProbe = {
   ts: 0,
 };
 
-export const demoLeases: T.Lease[] = demoClients.filter((c) => c.ip).map((c) => ({
-  expires: "11h 32m", mac: c.mac, ip: c.ip!, hostname: c.name.split(" (")[0],
-}));
-
 export const demoIpv6: T.IPv6Probe = {
   state: "enabled",
   lan_ipv6: "fd5f:3c4a:9e00::1/60",
